@@ -7,6 +7,7 @@ import BookRequestModal from "@/components/BookRequestModal";
 import SuccessModal from "@/components/SuccessModal";
 
 const BookDetails = () => {
+  const apiUrl = import.meta.env.apiUrl;
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const id = params.get("id");
@@ -64,7 +65,7 @@ const BookDetails = () => {
         setError(null);
         
         // Replace with your actual API endpoint
-        const response = await axios.get(`http://backend.test/api/books/${id}`);
+        const response = await axios.get(`${apiUrl}/api/books/${id}`);
         setBook(response.data);
         
       } catch (err) {

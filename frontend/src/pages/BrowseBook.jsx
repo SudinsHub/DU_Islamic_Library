@@ -3,6 +3,8 @@ import axios from 'axios';
 import LibraryBookCard from '@/components/BookCard';
 
 const BrowseBooksPage = () => {
+  const apiUrl = import.meta.env.apiUrl;
+
   // --- State Management ---
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -77,9 +79,9 @@ const BrowseBooksPage = () => {
     const fetchFilterData = async () => {
       try {
         const [categoriesRes, authorsRes, hallsRes] = await Promise.all([
-          axios.get('http://backend.test/api/categories'),
-          axios.get('http://backend.test/api/authors'),
-          axios.get('http://backend.test/api/halls'),
+          axios.get(`${process.env.apiUrl}/api/categories`),
+          axios.get(`${process.env.apiUrl}/api/authors`),
+          axios.get(`${process.env.apiUrl}/api/halls`),
         ]);
         setCategories(categoriesRes.data);
         setAuthors(authorsRes.data);
@@ -115,7 +117,7 @@ const BrowseBooksPage = () => {
     }
 
     try {
-      const response = await axios.get('http://backend.test/api/books', { params });
+      const response = await axios.get(`${apiUrl}/api/books`, { params });
       const { data, meta } = response.data; // Destructure nested response
 
       if (append) {
