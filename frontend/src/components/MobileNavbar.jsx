@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { Bell, Search, User, Menu, LogIn} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = ({ isLoggedIn = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const navigate = useNavigate();
+  // resolving $request->has('search')
+  const handleSearch = (e) => {
+    e.preventDefault();
+    navigate(`/browse-books?search=${searchTerm}`);
+  }
   return (
     <div className="w-full bg-white">
       
@@ -49,6 +55,11 @@ const Navbar = ({ isLoggedIn = false }) => {
               className="w-full py-3 pl-10 pr-4 border border-gray-200 rounded-full focus:outline-none focus:ring-1 focus:ring-green-500 bg-gray-50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch(e);
+                }
+              }}
             />
           </div>
         </div>

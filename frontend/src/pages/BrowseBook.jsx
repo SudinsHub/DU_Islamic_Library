@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import LibraryBookCard from '@/components/BookCard';
+import { useLocation } from 'react-router-dom'; // For extracting search params
+
 
 const BrowseBooksPage = () => {
   const apiUrl = import.meta.env.VITE_API_URL; // Ensure this is set in your .env file
-  // Ensure apiUrl is defined
-  if (!apiUrl) {
-    console.error('API URL is not defined. Please set the apiUrl environment variable.');
-    return <div className="text-red-500 text-center mt-8">API URL is not defined. Please check your environment variables.</div>;   
-  }
+ 
+  // extract search term from 
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const searchKey = params.get("search") || ''; 
+  console.log("Search Key: ", searchKey);
   // --- State Management ---
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -118,6 +121,10 @@ const BrowseBooksPage = () => {
     }
     if (selectedHalls.length > 0) {
       params.hall_id = selectedHalls[0]; // Send only the first selected hall ID
+    }
+
+    if( searchKey) {
+      params.search = searchKey; // Add search term if provided
     }
 
     try {

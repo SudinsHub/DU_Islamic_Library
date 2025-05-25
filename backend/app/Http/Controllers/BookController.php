@@ -90,7 +90,7 @@ class BookController extends Controller
                 ->withCount('request'); // Adds 'requests_count' property
 
         // --- Searching ---
-        if ($request->has('search')) {
+        if ($request->has('search')) { 
             $searchTerm = '%' . $request->input('search') . '%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('books.title', 'like', $searchTerm)

@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import { Bell, Search, User } from 'lucide-react';
 import {buttonGreen} from '../utils/colors' 
+import { useNavigate } from 'react-router';
 
 const Navbar = ({ isLoggedIn = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const navigate = useNavigate();
+  // resolving $request->has('search')
+  const handleSearch = (e) => {
+    e.preventDefault();
+    navigate(`/browse-books?search=${searchTerm}`);
+  }
+
   return (
     <div >
       {!isLoggedIn ? (
@@ -31,6 +38,11 @@ const Navbar = ({ isLoggedIn = false }) => {
               className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch(e);
+                }
+              }}
             />
           </div>
           
