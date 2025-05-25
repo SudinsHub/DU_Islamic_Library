@@ -3,8 +3,12 @@ import axios from 'axios';
 import LibraryBookCard from '@/components/BookCard';
 
 const BrowseBooksPage = () => {
-  const apiUrl = import.meta.env.apiUrl;
-
+  const apiUrl = import.meta.env.VITE_API_URL; // Ensure this is set in your .env file
+  // Ensure apiUrl is defined
+  if (!apiUrl) {
+    console.error('API URL is not defined. Please set the apiUrl environment variable.');
+    return <div className="text-red-500 text-center mt-8">API URL is not defined. Please check your environment variables.</div>;   
+  }
   // --- State Management ---
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,9 +83,9 @@ const BrowseBooksPage = () => {
     const fetchFilterData = async () => {
       try {
         const [categoriesRes, authorsRes, hallsRes] = await Promise.all([
-          axios.get(`${process.env.apiUrl}/api/categories`),
-          axios.get(`${process.env.apiUrl}/api/authors`),
-          axios.get(`${process.env.apiUrl}/api/halls`),
+          axios.get(`${apiUrl}/api/categories`),
+          axios.get(`${apiUrl}/api/authors`),
+          axios.get(`${apiUrl}/api/halls`),
         ]);
         setCategories(categoriesRes.data);
         setAuthors(authorsRes.data);

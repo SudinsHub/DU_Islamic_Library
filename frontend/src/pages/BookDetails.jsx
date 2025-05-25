@@ -7,7 +7,8 @@ import BookRequestModal from "@/components/BookRequestModal";
 import SuccessModal from "@/components/SuccessModal";
 
 const BookDetails = () => {
-  const apiUrl = import.meta.env.apiUrl;
+  const apiUrl = import.meta.env.VITE_API_URL;
+  
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const id = params.get("id");
