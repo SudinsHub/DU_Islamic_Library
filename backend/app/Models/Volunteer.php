@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Container\Attributes\Auth;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
-
-class Volunteer extends Model
+use Illuminate\Foundation\Auth\User as Authenticatable;
+class Volunteer extends Authenticatable
 {
         /** @use HasFactory<\Database\Factories\ReaderFactory> */
         use HasFactory, HasApiTokens, HasUuids;

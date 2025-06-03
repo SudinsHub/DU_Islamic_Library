@@ -11,6 +11,7 @@ import AdminSignUp from '../pages/AdminSignUp'
 import MyReads from '../pages/MyReads';
 import BrowseBooksPage from '../pages/BrowseBook';
 import BookDetails from '../pages/BookDetails';
+import AuthPage from '@/components/auth/AuthPage';
 const AppRoutes = () => {
   return (
     <Routes>
@@ -22,15 +23,12 @@ const AppRoutes = () => {
         <Route path="my-reads" element={<MyReads />} />
         <Route path="browse-books" element={<BrowseBooksPage />} />
         <Route path="/book-details" element={<BookDetails />} />
+
+        <Route path="login" element={<AuthPage />} />
+        <Route path="signup" element={<SignUp />} />
       </Route>
 
-      <Route path="login" element={<Login />} />
-      <Route path="signup" element={<SignUp />} />
 
-      <Route path="a">
-        <Route path="login" element={<AdminLogin />} />
-        <Route path="signup" element={<AdminSignUp />} />
-      </Route>
     </Routes>
   );
 };

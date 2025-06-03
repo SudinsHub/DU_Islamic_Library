@@ -11,6 +11,15 @@ const Navbar = ({ isLoggedIn = false }) => {
     e.preventDefault();
     navigate(`/browse-books?search=${searchTerm}`);
   }
+  const handleLoginButton = (e) => {
+    e.preventDefault();
+    navigate(`/login`);
+  }
+  const handleSignUpButton = (e) => {
+    e.preventDefault();
+    navigate(`/signup`);
+  }
+
 
   return (
     <div >
@@ -59,8 +68,8 @@ const Navbar = ({ isLoggedIn = false }) => {
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <a href="/login" className={`px-4 py-2 text-gray-800 font-medium hover:text-[${buttonGreen}]`}>Log In</a>
-              <a href="/signup" className={`px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-[${buttonGreen}]`}>Sign Up</a>
+              <button onClick={e=> handleLoginButton(e)} className={`px-4 py-2 text-gray-800 font-medium hover:text-[${buttonGreen}]`}>Log In</button>
+              <button onClick={e => handleSignUpButton(e)} className={`px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-[${buttonGreen}]`}>Sign Up</button>
             </div>
           </div>
         </div>

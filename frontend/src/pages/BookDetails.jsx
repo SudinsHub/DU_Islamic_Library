@@ -1,21 +1,21 @@
 import { useState, useEffect } from "react";
 import { Heart, ChevronLeft, Share2, MoreVertical, Star } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import axios from "axios";
-import { buttonGreen } from "@/utils/colors";
 import BookRequestModal from "@/components/BookRequestModal";
 import SuccessModal from "@/components/SuccessModal";
+import { apiCall } from '../utils/ApiCall'; 
+import { toast } from 'react-toastify';
+import { useAuth } from "@/contexts/AuthContext"; 
 
 const BookDetails = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
-  
+  const { isAuthenticated, token } = useAuth();
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const id = params.get("id");
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [isLoved, setIsLoved] = useState(false);
   // For modal
   const [isRequestModalOpen, setRequestModalOpen] = useState(false);
   const [isSuccessModalOpen, setSuccessModalOpen] = useState(false);
@@ -52,6 +52,29 @@ const BookDetails = () => {
     // Implement phone call functionality here
   };
 
+  const handleLoved = async () => {
+    const action = isLoved ? 'remove' : 'add'; // Determine action based on current state
+    const method = isLoved ? 'DELETE' : 'POST'; // DELETE for remove, POST for add
+    const endpoint = `/api/wish/${isLoved ? book.id : ''}`; // For DELETE, include ID in URL; for POST, empty string
+    setIsLoved(!isLoved);
+    
+    try {
+        if (method === 'POST') {
+            await apiCall(endpoint, { book_id: book.id }, method, token);
+        } else { // DELETE method
+            await apiCall(endpoint, {}, method, token); // DELETE usually doesn't have a body
+        }
+
+        // Update UI state only on successful API call
+        toast.success(`Book ${action}ed successfully!`);
+      } catch (err) {
+        // Revert UI state if API call fails
+        // setIsLoved(isLoved); // Keep the previous state if API fails
+        setIsLoved(!isLoved);
+        toast.error(`Failed to ${action} book: ${err.message}`);
+    }
+};
+
   // Fetch book data from API
   useEffect(() => {
     const fetchBook = async () => {
@@ -65,9 +88,12 @@ const BookDetails = () => {
         setLoading(true);
         setError(null);
         
-        // Replace with your actual API endpoint
-        const response = await axios.get(`${apiUrl}/api/books/${id}`);
-        setBook(response.data);
+        console.log("Token:", token);
+        
+        const response = await apiCall(`/api/books/${id}`, {}, 'GET', token);
+        setBook(response);
+        setIsLoved(response.isLoved || false);
+        console.log("Response:", response);
         
       } catch (err) {
         console.error("Error fetching book:", err);
@@ -107,6 +133,7 @@ const BookDetails = () => {
   return (
     <>
       {/* Book Request Modal */}
+
       <BookRequestModal
         isOpen={isRequestModalOpen}
         onClose={() => setRequestModalOpen(false)}
@@ -165,13 +192,13 @@ const BookDetails = () => {
             <div className={`mt-6 flex gap-4 `}>
               <button 
                 onClick={() => setRequestModalOpen(true)} 
-                className={`bg-[#0CCE6B] text-white py-3 px-4 rounded-md flex-1 font-medium ${!book.availability ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={!book.availability}
+                className={`bg-[#0CCE6B] text-white py-3 px-4 rounded-md flex-1 font-medium ${(!book.availability || !isAuthenticated) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={!book.availability || !isAuthenticated}
               >
-                {book.availability ? 'Request Book' : 'Not Available'}
+                {!isAuthenticated ? "Login First" :(book.availability ? 'Request Book' : 'Not Available')}
               </button>
-              <button className={`border border-gray-300 p-3 rounded-md ${book.isLoved ? 'bg-red-50' : ''}`}>
-                <Heart size={20} className={book.isLoved ? "text-red-500 fill-red-500" : "text-gray-500"} />
+              <button onClick={handleLoved} className={`border border-gray-300 p-3 rounded-md ${isLoved ? 'bg-red-50' : ''}`}>
+                <Heart size={20} className={isLoved ? "text-red-500 fill-red-500" : "text-gray-500"} />
               </button>
             </div>
           </div>

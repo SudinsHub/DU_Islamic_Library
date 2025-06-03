@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('wishlists', function (Blueprint $table) {
-            $table->uuid('wishlist_id')->primary();
+            $table->uuid('wish_id')->primary();
             $table->foreignUuid('reader_id')->references('reader_id')->on('readers')->constrained()->cascadeOnDelete();
             $table->foreignUuid('book_id')->references('book_id')->on('books')->constrained()->cascadeOnDelete();
             $table->timestamps();

@@ -47,7 +47,7 @@ class RequestController extends Controller
         // This is a business logic decision.
         DB::beginTransaction();
         try {
-            $bookCollection->decrement('available_copies');
+            // $bookCollection->decrement('available_copies');
 
             $libraryRequest = LibraryRequest::create($request->validated());
 

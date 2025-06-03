@@ -6,6 +6,7 @@ use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\StoreBookRequest;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UpdateBookRequest;
@@ -157,14 +158,16 @@ class BookController extends Controller
 
             // Determine if the book is available (boolean)
             $availableStatus = $totalAvailableCopies > 0;
-
-            // Determine if the book is "loved" by the authenticated user.
-            // This is a placeholder. You need to implement your 'favorites' system.
-            // For example, if your User model has a 'favoriteBooks' relationship:
+            
             $isLoved = false;
-            // if ($request->user() && $request->user()->reader_id) {
-            //     $isLoved = $request->user()->favoriteBooks()->where('book_id', $book->book_id)->exists();
-            // }
+            $user = Auth::guard('sanctum')->user();
+            if ($user && $user->reader_id) {
+                // The Model has a wishlists() relationship that returns a collection of Book models
+                // $isLoved = $request->user()->wishlist->contains('book_id', $book->book_id);
+                $userWishlistBookIds = $user->wishlist->pluck('book_id');
+                $isLoved = $userWishlistBookIds->contains($book->book_id);
+                
+            }
 
             return [
                 'id' => $book->book_id,
@@ -239,26 +242,23 @@ class BookController extends Controller
             'publisher',
             'category',
             'review.reader',
-            'book_collection.hall'
+            'book_collection.hall',
+            'wishlist', 
         ]);
 
         // Calculate total available copies across all halls for this book
         $totalAvailableCopies = $book->book_collection->sum('available_copies');
 
-        // Determine if the book is "loved" by the authenticated user.
-        // This is a placeholder. You need to implement a 'favorites' system
-        // (e.g., a many-to-many relationship between User and Book, or a 'user_favorite_books' table).
+        
         $isLoved = false;
-        // if (auth()->check()) {
-            // Example: Assuming your User model has a 'favoriteBooks' relationship
-            // and you've loaded user's favorites or can quickly check existence.
-            // This line would check if the authenticated user has favored this specific book.
-            // You might need to load user's favoriteBooks or run a query.
-            // Example check:
-            // if ($request->user()->favoriteBooks()->where('book_id', $book->book_id)->exists()) {
-            //     $isLoved = true;
-            // }
-        // }
+        $user = Auth::guard('sanctum')->user();
+        if ($user && $user->reader_id) {
+            // The Model has a wishlists() relationship that returns a collection of Book models
+            // $isLoved = $request->user()->wishlist->contains('book_id', $book->book_id);
+            $userWishlistBookIds = $user->wishlist->pluck('book_id');
+            $isLoved = $userWishlistBookIds->contains($book->book_id);
+            
+        }
 
         // Format the reviews array to include reader name, date, rating, and comment
         $formattedReviews = $book->review->map(function ($review) {
@@ -272,7 +272,7 @@ class BookController extends Controller
         });
 
         // Format the halls array to show where the book is available and how many copies
-        $formattedHalls = $book->book_collection->map(function ($collection) {
+        $formattedHalls = $book->book_collection->where("available_copies", ">", 0)->map(function ($collection) {
             return [
                 'hall_id' => $collection->hall->hall_id, // Assuming hall_id is primary key
                 'hall_name' => $collection->hall->name,

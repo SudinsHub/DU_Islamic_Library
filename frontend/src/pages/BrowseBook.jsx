@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import LibraryBookCard from '@/components/BookCard';
-import { useLocation } from 'react-router-dom'; // For extracting search params
-
+import { useLocation } from 'react-router-dom'; 
+import {apiCall} from "@/utils/ApiCall"
+import { useAuth } from '@/contexts/AuthContext'; 
 
 const BrowseBooksPage = () => {
   const apiUrl = import.meta.env.VITE_API_URL; // Ensure this is set in your .env file
- 
+  const {token} = useAuth(); 
   // extract search term from 
   const { search } = useLocation();
   const params = new URLSearchParams(search);
@@ -128,9 +129,10 @@ const BrowseBooksPage = () => {
     }
 
     try {
-      const response = await axios.get(`${apiUrl}/api/books`, { params });
-      const { data, meta } = response.data; // Destructure nested response
-
+      // const response = await axios.get(`${apiUrl}/api/books`, { params });
+      // const { data, meta } = response.data; // Destructure nested response
+      const response = await apiCall('/api/books', params, 'GET', token); // Use apiCall utility
+      const { data, meta } = response; // Destructure nested response
       if (append) {
         setBooks((prevBooks) => [...prevBooks, ...data]);
       } else {

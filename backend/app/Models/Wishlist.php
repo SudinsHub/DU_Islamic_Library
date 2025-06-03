@@ -14,6 +14,15 @@ class Wishlist extends Model
     protected $primaryKey = 'wish_id';
     public $incrementing = false;
     protected $keyType = 'string';
+    public $timestamps = false;
+
+    protected $fillable = [
+        'book_id',
+    ];
+    protected $casts = [
+        'book_id' => 'string',
+        'reader_id' => 'string',
+    ];
 
     //     BOOK ||--o{ WISHLIST : "added to"
     public function book() {
