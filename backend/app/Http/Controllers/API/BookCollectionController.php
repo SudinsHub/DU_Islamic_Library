@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Models\Book;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\BookCollection;
 use Illuminate\Support\Facades\DB;
-use App\Http\Requests\StoreBookCollectionRequest;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class BookCollectionController
 {
@@ -23,59 +27,51 @@ class BookCollectionController
      * @param  \App\Http\Requests\StoreBookCollectionRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreBookCollectionRequest $request)
+    public function store(Request $request)
     {
-        $bookId = $request->input('book_id');
-        $hallId = $request->input('hall_id');
-        $newTotalCopies = $request->input('total_copies');
-        $newAvailableCopies = $request->input('available_copies');
+        //
+    }
 
-        // Use a database transaction to ensure atomicity
-        return DB::transaction(function () use ($bookId, $hallId, $newTotalCopies, $newAvailableCopies) {
-            // Find an existing collection entry or create a new instance
-            $bookCollection = BookCollection::firstOrNew(
-                ['book_id' => $bookId, 'hall_id' => $hallId]
-            );
+    /**
+     * Search for books by title.
+     * Updated to include image_url and foreign key IDs for frontend auto-fill.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function search(Request $request)
+    {
+        $request->validate(['title' => 'required|string|min:3']);
 
-            $isNew = !$bookCollection->exists; // Check if it's a new record
+        $title = $request->query('title');
 
-            if ($isNew) {
-                // If it's a new record, simply assign the values
-                $bookCollection->collection_id = (string) \Illuminate\Support\Str::uuid(); // Manually set UUID for new record
-                $bookCollection->total_copies = $newTotalCopies;
-                $bookCollection->available_copies = $newAvailableCopies;
-            } else {
-                // If it's an existing record, update the counts cumulatively
-                $bookCollection->total_copies += $newTotalCopies;
-                $bookCollection->available_copies += $newAvailableCopies;
+        $books = Book::where('title', 'LIKE', '%' . $title . '%')
+                     ->select('book_id', 'title', 'description', 'image_url',
+                              'author_id', 'publisher_id', 'category_id')
+                     // Eager load relationships to get names for display in suggestions
+                     ->with(['author:author_id,name', 'publisher:publisher_id,name', 'category:category_id,name'])
+                     ->limit(10)
+                     ->get();
 
-                // Ensure available copies don't exceed total copies (important for updates)
-                if ($bookCollection->available_copies > $bookCollection->total_copies) {
-                    $bookCollection->available_copies = $bookCollection->total_copies;
-                }
-            }
-
-            // Perform final validation on combined counts before saving
-            // This catches cases where current_available + new_available > current_total + new_total
-            if ($bookCollection->available_copies < 0) { // Should ideally be caught by min:0, but defensive
-                return response()->json(['message' => 'Calculated available copies cannot be negative.'], 422);
-            }
-            if ($bookCollection->available_copies > $bookCollection->total_copies) {
-                 // This should be caught by the above logic, but as a final check
-                return response()->json(['message' => 'Final available copies cannot exceed total copies.'], 422);
-            }
-
-
-            $bookCollection->save(); // Save the new or updated record
-
-            $status = $isNew ? 201 : 200; // 201 Created, 200 OK (for update)
-            $message = $isNew ? 'Book collection added successfully!' : 'Book collection updated successfully!';
-
-            return response()->json([
-                'message' => $message,
-                'data' => $bookCollection
-            ], $status);
-        });
+        return response()->json([
+            'success' => true,
+            'data' => $books->map(function($book) {
+                return [
+                    'book_id' => $book->book_id,
+                    'title' => $book->title,
+                    'author_id' => $book->author_id,
+                    'publisher_id' => $book->publisher_id,
+                    'category_id' => $book->category_id,
+                    'description' => $book->description,
+                    // Construct full public URL for the image
+                    'image_url' => $book->image_url ? Storage::url($book->image_url) : null,
+                    // Include names for frontend display in suggestions
+                    'author_name' => $book->author->name ?? null,
+                    'publisher_name' => $book->publisher->name ?? null,
+                    'category_name' => $book->category->name ?? null,
+                ];
+            })
+        ]);
     }
 
     // You might also have an update method for modifying copies directly

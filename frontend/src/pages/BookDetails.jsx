@@ -19,25 +19,22 @@ const BookDetails = () => {
   // For modal
   const [isRequestModalOpen, setRequestModalOpen] = useState(false);
   const [isSuccessModalOpen, setSuccessModalOpen] = useState(false);
-  
-  // Example successful request info (you may want to make this dynamic based on actual request)
-  const requestInfo = {
-    bookTitle: "Paradoxical Sajid",
-    bookAuthor: "Arif Azad",
-    volunteerName: "Md. Arafat Hossen",
-    pickupLocation: "Salimullah Muslim Hall, Block 03, Room no. 411",
-    returnInfo: "The return date is usually 7 days from the day you collect the book."
-  };
+  const [volunteersList, setVolunteersList] = useState([]); 
   
   // Handle request confirmation
-  const handleConfirmRequest = (collectionPointId) => {
-    console.log(`Book requested at collection point: ${collectionPointId}`);
-    setRequestModalOpen(false);
-    
-    // Show success modal after request
-    setTimeout(() => {
+  const handleConfirmRequest = async (collectionPointId) => {
+    try {
+      await apiCall(`/api/request`, { book_id: book.id, hall_id: collectionPointId }, 'POST', token);
+      const availableVols = await apiCall(`/api/vol?hall_id=${collectionPointId}`, {}, 'GET', token);
+      toast.success("Request confirmed successfully!");
+      setVolunteersList(availableVols);
+      setRequestModalOpen(false);
       setSuccessModalOpen(true);
-    }, 500);
+    } catch (error) {
+      console.error("Error confirming request:", error);
+      toast.error("Failed to confirm request");
+      
+    }
   };
   
   // Go to dashboard action
@@ -46,12 +43,6 @@ const BookDetails = () => {
     setSuccessModalOpen(false);
   };
   
-  // Call volunteer action
-  const handleCallVolunteer = () => {
-    console.log("Calling volunteer");
-    // Implement phone call functionality here
-  };
-
   const handleLoved = async () => {
     const action = isLoved ? 'remove' : 'add'; // Determine action based on current state
     const method = isLoved ? 'DELETE' : 'POST'; // DELETE for remove, POST for add
@@ -94,7 +85,6 @@ const BookDetails = () => {
         setBook(response);
         setIsLoved(response.isLoved || false);
         console.log("Response:", response);
-        
       } catch (err) {
         console.error("Error fetching book:", err);
         setError("Failed to load book details");
@@ -104,7 +94,7 @@ const BookDetails = () => {
     };
 
     fetchBook();
-  }, [id]);
+  }, [id, token]);
 
   if (loading) {
     return (
@@ -155,8 +145,9 @@ const BookDetails = () => {
         isOpen={isSuccessModalOpen}
         onClose={() => setSuccessModalOpen(false)}
         onGoToDashboard={handleGoToDashboard}
-        onCallVolunteer={handleCallVolunteer}
-        requestInfo={requestInfo}
+        onCallVolunteer={(contact) => { console.log("Calling:", contact);}}
+        requestInfo={{ bookTitle: book.title, bookAuthor: book.author }} // This should now only have bookTitle, bookAuthor, returnInfo
+        volunteers={volunteersList} 
       />
       
       <div className="bg-gray-50 min-h-screen pb-8">

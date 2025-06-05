@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Bell, Search, User, Menu, LogIn} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
-const Navbar = ({ isLoggedIn = false }) => {
+const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const {isAuthenticated} = useAuth();
   // resolving $request->has('search')
   const handleSearch = (e) => {
     e.preventDefault();
@@ -33,7 +35,7 @@ const Navbar = ({ isLoggedIn = false }) => {
                 <Bell className="h-6 w-6" />
                 <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
               </button>
-              {isLoggedIn ? (
+              {isAuthenticated ? (
                 <button className="p-2 text-gray-600">
                     <User className="h-6 w-6" />
                 </button>

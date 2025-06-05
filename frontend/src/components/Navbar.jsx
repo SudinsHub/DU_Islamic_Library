@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Bell, Search, User } from 'lucide-react';
 import {buttonGreen} from '../utils/colors' 
 import { useNavigate } from 'react-router';
+import { useAuth } from '@/contexts/AuthContext';
 
-const Navbar = ({ isLoggedIn = false }) => {
+const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const {isAuthenticated} = useAuth();
   const navigate = useNavigate();
   // resolving $request->has('search')
   const handleSearch = (e) => {
@@ -23,7 +25,7 @@ const Navbar = ({ isLoggedIn = false }) => {
 
   return (
     <div >
-      {!isLoggedIn ? (
+      {!isAuthenticated ? (
         // Logged out navbar
         <div className="w-full mx-auto bg-white rounded-lg p-4 flex items-center justify-between text-nowrap">
           <div className="h-8 w-8 mr-2 flex items-center justify-center rounded-sm">

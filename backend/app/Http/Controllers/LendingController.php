@@ -54,10 +54,32 @@ class LendingController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $lendings = Lending::with(['volunteer', 'request.reader', 'request.book', 'request.hall'])->get();
-        return response()->json($lendings);
+        if($request->has('hall_id')) {
+            $hallId = $request->input('hall_id');
+        }
+        else {
+            if ($request->user() && $request->user()->hall_id) {
+                $hallId = $request->user()->hall_id; 
+            } else {
+                return response()->json(['message' => 'Hall ID is required'], Response::HTTP_BAD_REQUEST); // 400 Bad Request
+            }
+        }
+        // lending with that hall and whose status is pending
+        $lendings = Lending::with(['request.reader', 'request.book', 'request.hall'])
+            ->whereHas('request', function ($query) use ($hallId) {
+                $query->where('hall_id', $hallId);
+            })
+            ->where('status', 'pending')
+            ->orderBy('return_date', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => 'Lendings retrieved successfully.',
+            'data' => $lendings,
+            'success' => true
+        ]);
     }
 
     /**
@@ -178,16 +200,26 @@ class LendingController extends Controller
     /**
      * Mark a book as returned.
      */
-    public function returnBook(ReturnBookRequest $request, Lending $lending): JsonResponse
+    public function returnBook(Request $request): JsonResponse
     {
-        $this->getVolunteerId($request); // Ensure authorized volunteer
 
+        $lendingId = $request->input('lending_id');
+        $request->validate([
+            'lending_id' => ['required', 'exists:lendings,lending_id']
+        ]);
+
+        $lending = Lending::find($lendingId);
+        if (!$lending) {
+            return response()->json([
+                'message' => 'Lending not found.'
+            ], Response::HTTP_NOT_FOUND);
+        }
+        
         if ($lending->status === 'returned' || $lending->status === 'lost') {
             return response()->json([
                 'message' => 'Book is already marked as returned or lost.'
             ], Response::HTTP_BAD_REQUEST);
         }
-
         DB::beginTransaction();
         try {
             $lending->status = 'returned';
@@ -213,7 +245,8 @@ class LendingController extends Controller
             DB::commit();
             return response()->json([
                 'message' => 'Book marked as returned successfully.',
-                'data' => $lending
+                'data' => $lending,
+                'success' => true
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -227,30 +260,36 @@ class LendingController extends Controller
     /**
      * Mark a book as lost.
      */
-    public function markLost(MarkLostRequest $request, Lending $lending): JsonResponse
+    public function markLost(Request $request): JsonResponse
     {
-        $this->getVolunteerId($request); // Ensure authorized volunteer
+        $lendingId = $request->input('lending_id');
+        if (!$lendingId) {
+            return response()->json([
+                'message' => 'Lending ID is required.'
+            ], Response::HTTP_BAD_REQUEST);
+        }
 
+        
+        $lending = Lending::find($lendingId);
+        if (!$lending) {
+            return response()->json([
+                'message' => 'Lending not found.'
+            ], Response::HTTP_NOT_FOUND);
+        }
+        
         if ($lending->status === 'returned' || $lending->status === 'lost') {
             return response()->json([
                 'message' => 'Book is already marked as returned or lost.'
             ], Response::HTTP_BAD_REQUEST);
         }
-
         DB::beginTransaction();
         try {
             $lending->status = 'lost';
-            $lending->return_date = now()->toDateString(); 
             $lending->save();
-
-            // When a book is lost, its available copies are *not* incremented,
-            // as it's no longer physically available.
-            // You might consider decrementing total_copies here based on policy.
-            // For now, we only update status.
 
             DB::commit();
             return response()->json([
-                'message' => 'Book marked as lost successfully.',
+                'message' => 'Book lost!',
                 'data' => $lending
             ]);
         } catch (\Exception $e) {

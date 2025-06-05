@@ -27,29 +27,6 @@ class Lending extends Model
         'return_date' => 'date',
     ];
 
-    /**
-     * Scope a query to only include pending lendings.
-     */
-    public function scopePending($query)
-    {
-        return $query->where('status', 'pending');
-    }
-
-    /**
-     * Scope a query to only include returned lendings.
-     */
-    public function scopeReturned($query)
-    {
-        return $query->where('status', 'returned');
-    }
-
-    /**
-     * Scope a query to only include lost lendings.
-     */
-    public function scopeLost($query)
-    {
-        return $query->where('status', 'lost');
-    }
     //     VOLUNTEER ||--o{ LENDING : processes
     // REQUEST ||--|| LENDING : "fulfilled by"
 

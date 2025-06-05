@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext'; // Adjust path as needed
 import LoginForm from './LoginPage'; // Adjust path as needed
 import RegistrationForm from './RegistrationForm'; // Adjust path as needed
+import VolunteerDashboard from '@/pages/VolunteerDashboard';
 
-// Placeholder for a simple dashboard component
+// Dummy Dashboard, R lagbe na
 const Dashboard = () => {
   const { isAuthenticated, user, userType, isLoading, error, logout } = useAuth();
 
@@ -69,7 +70,7 @@ const Dashboard = () => {
  * Allows switching between login and registration forms for different user types.
  */
 function AuthPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, userType } = useAuth();
   const [isLoginMode, setIsLoginMode] = useState(true); // true for login, false for register
   const [selectedUserType, setSelectedUserType] = useState('reader'); // Default to reader
 
@@ -82,6 +83,9 @@ function AuthPage() {
   }
 
   if (isAuthenticated) {
+    if(userType === 'volunteer') {
+      return <VolunteerDashboard />;
+    }
     return <Dashboard />;
   }
 

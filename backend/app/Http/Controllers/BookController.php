@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UpdateBookRequest;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\Request; // Added for isLoved user context
+use Illuminate\Support\Str;
+use App\Models\BookCollection;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class BookController extends Controller
 {
@@ -22,60 +26,6 @@ class BookController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    // public function index(Request $request): JsonResponse
-    // {
-    //     // Eager load necessary relationships to avoid N+1 query problems.
-    //     // We need:
-    //     // - the Book's Author
-    //     // - the Book's Category (for tags)
-    //     // - the Book's Reviews (to calculate rating and ratingCount)
-    //     // - the Book's Collections (to sum available copies across all halls)
-    //     $books = Book::with([
-    //         'author',
-    //         'category',
-    //         'review',
-    //         'book_collection' // Eager load book collections to calculate total available copies
-    //     ])->get();
-
-    //     // Prepare the data for the frontend LibraryBookCard component
-    //     $formattedBooks = $books->map(function ($book) use ($request) {
-    //         // Calculate average rating and review count
-    //         $averageRating = $book->review->avg('rating');
-    //         $ratingCount = $book->review->count();
-
-    //         // Calculate total available copies across ALL collections for this book
-    //         $totalAvailableCopies = $book->book_collection()->sum('available_copies');
-    //         $availableStatus = $totalAvailableCopies > 0;
-
-    //         // Determine if the book is "loved" by the authenticated user.
-    //         // This is a placeholder. You'd need to implement a 'favorites' system
-    //         // (e.g., a many-to-many relationship between User and Book)
-    //         // and check it here.
-    //         $isLoved = false;
-    //         // Example if you have a 'favorites' relationship on your User model:
-    //         // if ($request->user()) {
-    //         //     $isLoved = $request->user()->favoriteBooks->contains($book->book_id);
-    //         // }
-
-    //         return [
-    //             'id' => $book->book_id, // Primary ID for the component
-    //             'title' => $book->title,
-    //             'author' => $book->author ? $book->author->name : 'Unknown Author', // Handle case where author might be null
-    //             'rating' => round($averageRating ?? 0, 1), // Round to one decimal place, default to 0 if no reviews
-    //             'ratingCount' => $ratingCount,
-    //             'isLoved' => $isLoved, // Placeholder: false unless implemented
-    //             'availableStatus' => $availableStatus, // Now represents total availability across all halls
-    //             'tags' => $book->category ? $book->category->name : 'Uncategorized', // Using category name as a tag
-    //             'imageUrl' => $book->image_url ?? '/images/default_book_cover.jpg', // Use actual image_url, with a fallback
-    //             // Optionally, include the total available copies for debugging/display:
-    //             'total_available_copies' => $totalAvailableCopies,
-    //         ];
-    //     });
-
-    //     return response()->json($formattedBooks);
-    // }
-    
-    
     public function index(Request $request): JsonResponse
     {
         $query = Book::query();
@@ -195,30 +145,157 @@ class BookController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreBookRequest $request): JsonResponse
+    public function store(Request $request)
     {
-        DB::beginTransaction();
+        // 1. Validate incoming request data
         try {
-            $validatedData = $request->validated();
+            $validatedData = $request->validate([
+                'book_id' => 'nullable|uuid', // Can be null if it's a new book to the system
+                'is_new_book' => 'required|boolean', // Frontend sends this boolean
 
-            if ($request->hasFile('image')) {
-                $imagePath = $request->file('image')->store('book_covers', 'public');
-                $validatedData['image_url'] = Storage::url($imagePath);
+                // These fields are required ONLY if it's a new book to the system (Case 1)
+                'title' => 'required_if:is_new_book,true|string|max:255',
+                'author_id' => 'required_if:is_new_book,true|nullable|uuid|exists:authors,author_id',
+                'publisher_id' => 'required_if:is_new_book,true|nullable|uuid|exists:publishers,publisher_id',
+                'category_id' => 'required_if:is_new_book,true|nullable|uuid|exists:categories,category_id',
+                'description' => 'nullable|string',
+
+                'copies_to_add' => 'required|integer|min:1', // Always required
+
+                // Image file is specifically for new books only
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // Image validation: 2MB max
+            ]);
+        } catch (ValidationException $e) {
+            Log::error('Validation error in BookController@store', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation Error',
+                'errors' => $e->errors()
+            ], 422);
+        }
+
+        // Ensure the authenticated user is a volunteer and get their hall_id
+        $volunteer = $request->user(); // Assuming authenticated user is the volunteer
+        if (!$volunteer || !isset($volunteer->hall_id) ) { // || !$volunteer->admin_id
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized for inserting book.'
+            ], 403);
+        }
+        $hallId = $volunteer->hall_id; // || $volunteer->admin_id; // Use hall_id or admin_id as needed
+        $copiesToAdd = $validatedData['copies_to_add'];
+        $imageUrl = null; // Initialize image URL for new books
+
+        DB::beginTransaction(); // Start a database transaction for atomicity
+        try {
+            if ($validatedData['is_new_book']) {
+                // CASE 1: The book is new to the system.
+                // (frontend sent `is_new_book: true`)
+
+                // Handle image upload if provided
+                if ($request->hasFile('image')) {
+                    $imageFile = $request->file('image');
+                    // Store the image in 'storage/app/public/books' directory
+                    // 'store' method returns the path relative to the disk's root (e.g., 'books/unique-filename.jpg')
+                    $path = $imageFile->store('books', 'public');
+                    // Get the public URL for the stored image to save in DB
+                    $imageUrl = Storage::url($path);
+                }
+
+                // Create a new Book entry
+                $book = Book::create([
+                    'book_id' => Str::uuid(), // Generate UUID for the new book
+                    'title' => $validatedData['title'],
+                    'author_id' => $validatedData['author_id'],
+                    'publisher_id' => $validatedData['publisher_id'],
+                    'category_id' => $validatedData['category_id'],
+                    'description' => $validatedData['description'] ?? null,
+                    'image_url' => $imageUrl, // Save the image URL/path
+                ]);
+                $bookId = $book->book_id;
+
+                // Create a new entry in book_collections for this new book and the volunteer's hall
+                $bookCollection = BookCollection::create([
+                    'collection_id' => Str::uuid(), // Primary key for book_collections
+                    'book_id' => $bookId,
+                    'hall_id' => $hallId,
+                    'total_copies' => $copiesToAdd,
+                    'available_copies' => $copiesToAdd,
+                ]);
+
+                DB::commit(); // Commit the transaction
+                return response()->json([
+                    'success' => true,
+                    'message' => 'New book and copies added successfully.',
+                    'data' => $bookCollection->load('book') // Optionally load book details
+                ], 201); // 201 Created for new resource
+
+            } else {
+                // The book is NOT new to the system.
+                // (frontend sent `is_new_book: false`, meaning book_id was provided)
+                // No image upload expected here, as book core data already exists.
+
+                $bookId = $validatedData['book_id'];
+                $book = Book::where('book_id', $bookId)->first();
+
+                if (!$book) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Existing book with provided ID not found.'
+                    ], 404); // 404 Not Found if existing book_id is invalid
+                }
+
+                // Check for existing BookCollection for this book and hall
+                $bookCollection = BookCollection::where('book_id', $bookId)
+                                                ->where('hall_id', $hallId)
+                                                ->first();
+
+                if ($bookCollection) {
+                    // CASE 3: The book is not new in the system, AND it's not new in the corresponding hall.
+                    // (An entry in book_collections already exists for this book_id and hall_id)
+                    // Simply add the new copies to existing counts.
+                    $bookCollection->total_copies += $copiesToAdd;
+                    $bookCollection->available_copies += $copiesToAdd; // Assuming added copies are available
+                    $bookCollection->save();
+
+                    DB::commit(); // Commit the transaction
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Copies added to existing book collection in this hall.',
+                        'data' => $bookCollection->load('book')
+                    ], 200); // 200 OK for update
+                } else {
+                    // CASE 2: The book is not new to the system, but it IS new in the specific hall.
+                    // (No entry in book_collections exists for this book_id and hall_id yet)
+                    // Create a new entry in book_collections for this existing book in this hall.
+                    $bookCollection = BookCollection::create([
+                        'collection_id' => Str::uuid(), // Primary key for book_collections
+                        'book_id' => $bookId,
+                        'hall_id' => $hallId,
+                        'total_copies' => $copiesToAdd,
+                        'available_copies' => $copiesToAdd,
+                    ]);
+
+                    DB::commit(); // Commit the transaction
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Book added to this hall for the first time.',
+                        'data' => $bookCollection->load('book')
+                    ], 201); // 201 Created for new resource
+                }
             }
-
-            $book = Book::create($validatedData);
-
-            DB::commit();
-            return response()->json([
-                'message' => 'Book created successfully.',
-                'data' => $book->load(['publisher', 'author', 'category'])
-            ], Response::HTTP_CREATED);
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::rollBack(); // Rollback on error
+            // Log the error for debugging purposes
+            Log::error('Error managing book collection: ' . $e->getMessage(), ['exception' => $e, 'request_data' => $request->all()]);
             return response()->json([
-                'message' => 'Failed to create book.',
-                'error' => $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+                'success' => false,
+                'message' => 'An internal server error occurred while managing book collection.'
+            ], 500); // 500 Internal Server Error
         }
     }
 
@@ -373,5 +450,46 @@ class BookController extends Controller
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+        /**
+     * Search for books by title.
+     * Updated to include image_url and foreign key IDs for frontend auto-fill.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function search(Request $request)
+    {
+        $request->validate(['title' => 'required|string|min:3']);
+
+        $title = $request->query('title');
+
+        $books = Book::where('title', 'LIKE', '%' . $title . '%')
+                     ->select('book_id', 'title', 'description', 'image_url',
+                              'author_id', 'publisher_id', 'category_id')
+                     ->with(['author:author_id,name', 'publisher:publisher_id,name', 'category:category_id,name'])
+                     ->limit(10)
+                     ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $books->map(function($book) {
+                return [
+                    'book_id' => $book->book_id,
+                    'title' => $book->title,
+                    'author_id' => $book->author_id,
+                    'publisher_id' => $book->publisher_id,
+                    'category_id' => $book->category_id,
+                    'description' => $book->description,
+                    // Construct full public URL for the image
+                    'image_url' => $book->image_url ? Storage::url($book->image_url) : null,
+                    // Include names for frontend display in suggestions
+                    'author_name' => $book->author->name ?? null,
+                    'publisher_name' => $book->publisher->name ?? null,
+                    'category_name' => $book->category->name ?? null,
+                ];
+            })
+        ]);
     }
 }

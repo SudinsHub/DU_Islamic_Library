@@ -18,9 +18,8 @@ class Request extends Model
         'reader_id',
         'book_id',
         'hall_id',
-        'lending_id',
-        'request_date',
-        'status',
+        // 'request_date',
+        // 'status',
     ];
 
     protected $casts = [

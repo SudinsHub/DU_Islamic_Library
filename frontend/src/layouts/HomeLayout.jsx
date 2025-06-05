@@ -25,7 +25,7 @@ function HomeLayout() {
     <div className="flex">
       <SideBar initialCollapsed = {isMobile}/>
       <div className="w-full mx-auto">
-        {isMobile ? <MobNavbar isLoggedIn={false} /> : <Navbar isLoggedIn={false} />}
+        {isMobile ? <MobNavbar/> : <Navbar/>}
         <Outlet/>
         <Footer/>
       </div>

@@ -45,10 +45,21 @@ Route::post('/login/volunteer', [AuthController::class, 'loginVolunteer']);
 Route::middleware('auth:sanctum')->group(function () {
     // Get currently authenticated user details
     Route::get('/user', [AuthController::class, 'user']);
-
+    Route::apiResource('vol', VolunteerController::class);
+    Route::post('vol/toggle-availability', [VolunteerController::class, 'toggleAvailability']);
+    
+    Route::patch('request/fulfill', [RequestController::class, 'fulfill']);
+    Route::patch('request/cancel', [RequestController::class, 'cancel']);
+    Route::apiResource('request', RequestController::class);
+    
     // Logout the authenticated user by revoking their current token
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('books', [BookController::class, 'store']);
 
+    
+    Route::patch('lendings/return', [LendingController::class, 'returnBook']);
+    Route::patch('lendings/lost', [LendingController::class, 'markLost']);
+    Route::apiResource('lendings', LendingController::class);
     // --- Routes protected by specific role middleware ---
 
     // Admin specific routes
@@ -69,7 +80,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/volunteer/tasks', function () {
             return response()->json(['message' => 'Here are the tasks for volunteers. You have volunteer privileges.']);
         });
-        // Add more volunteer-specific routes here
     });
 
     // You can also have routes accessible by any authenticated user,
@@ -81,16 +91,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 // router for books
-Route::apiResource('books', BookController::class);
+Route::get('books/search', [BookController::class, 'search']);
+Route::apiResource('books', BookController::class)->except(['store']);  
 Route::apiResource('publishers', PublisherController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('authors', AuthorController::class);
 Route::apiResource('halls', HallController::class);
 Route::apiResource('collections', BookCollectionController::class);
-Route::apiResource('requests', RequestController::class);
-Route::patch('requests/{request}/fulfill', [RequestController::class, 'fulfill']);
-Route::patch('requests/{request}/cancel', [RequestController::class, 'cancel']);
-Route::apiResource('lendings', LendingController::class);
-Route::patch('lendings/{lending}/return', [LendingController::class, 'returnBook']);
-Route::patch('lendings/{lending}/lost', [LendingController::class, 'markLost']);
+
 Route::apiResource('reading-histories', ReadingHistoryController::class);

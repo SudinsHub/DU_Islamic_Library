@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignUuid('reader_id')->references('reader_id')->on('readers')->constrained()->cascadeOnDelete();
             $table->foreignUuid('book_id')->references('book_id')->on('books')->constrained()->cascadeOnDelete();
             $table->foreignUuid('hall_id')->references('hall_id')->on('halls')->constrained()->cascadeOnDelete();
-            $table->timestamps();
+            // $table->timestamps();
             $table->date('request_date')->default(now());
             $table->enum('status', ['pending', 'fulfilled', 'cancelled'])->default('pending');
         });

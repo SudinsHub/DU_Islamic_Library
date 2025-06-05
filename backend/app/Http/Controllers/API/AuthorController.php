@@ -12,11 +12,16 @@ class AuthorController
      */
     public function index()
     {
-        //    AUTHOR {
-        // string author_id PK
-        // string name } 
-        // Fetch all authors' name 
-
+        // if there is a query parameter 'search', filter authors by name
+        if (request()->has('search') && request()->input('search') !== '') {
+            $search = request()->input('search');
+            $authors = Author::where('name', 'like', '%' . $search . '%')->get();
+            return response()->json([
+                'data' => $authors,
+                'success' => true,
+            ]);
+        }
+        // Otherwise, return all authors
         $authors = Author::all();
         return response()->json($authors);
     }

@@ -11,11 +11,15 @@ class CategoryController
      */
     public function index()
     {
-        //    CATEGORY {
-        // string category_id PK
-        // string name } 
-        // Fetch all categories' name 
-
+        if (request()->has('search') && request()->input('search') !== '') {
+            $search = request()->input('search');
+            $categories = \App\Models\Category::where('name', 'like', '%' . $search . '%')->get();
+            // send success and data
+            return response()->json([
+                'success' => true,
+                'data' => $categories,
+            ]);
+        }
         $categories = \App\Models\Category::all();
         return response()->json($categories);
     }
