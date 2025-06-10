@@ -31,17 +31,40 @@ const PendingBookRequests = () => {
     const [hoveredRequestId, setHoveredRequestId] = useState(null);
     const contactCardRef = useRef(null); // Ref for click outside logic
 
+    // New states for hall selection
+    const [halls, setHalls] = useState([]);
+    const [selectedHallId, setSelectedHallId] = useState(''); // Empty string for 'All Halls'
+
     // Helper to calculate default return date (7 days from today)
     const getDefaultReturnDate = () => {
         return addDays(new Date(), 7);
     };
+
+    // --- Fetch Halls ---
+    useEffect(() => {
+        const fetchHalls = async () => {
+            try {
+                const response = await apiCall('/api/halls', {}, 'GET');
+                setHalls(response);
+            } catch (err) {
+                console.error('Network error fetching halls:', err);
+                setError(prev => prev ? prev + '\nNetwork error fetching halls.' : 'Network error fetching halls.');
+            }
+        };
+        fetchHalls();
+    }, [token]);
+
 
     const fetchPendingRequests = useCallback(async () => {
         setLoading(true);
         setError(null);
         setSuccessMessage(null);
         try {
-            const response = await apiCall('/api/request?status=pending', {}, 'GET', token);
+            let apiUrl = '/api/request?status=pending';
+            if (selectedHallId) {
+                apiUrl += `&hall_id=${selectedHallId}`; // Add hall_id to query params if selected
+            }
+            const response = await apiCall(apiUrl, {}, 'GET', token);
             if (response.success) {
                 setPendingRequests(response.data);
             } else {
@@ -53,7 +76,7 @@ const PendingBookRequests = () => {
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, [token, selectedHallId]); // Re-run when selectedHallId changes
 
     useEffect(() => {
         fetchPendingRequests();
@@ -73,14 +96,14 @@ const PendingBookRequests = () => {
             const response = await apiCall(
                 `/api/request/fulfill`,
                 { return_date: formattedReturnDate,
-                  req_id: reqId  
+                  req_id: reqId
                  },
                 'PATCH',
                 token
             );
             if (response.success) {
                 setSuccessMessage('Book request fulfilled successfully!');
-                fetchPendingRequests();
+                fetchPendingRequests(); // Refresh requests
                 setShowDatePickerFor(null);
                 setReturnDate(null);
             } else {
@@ -102,7 +125,7 @@ const PendingBookRequests = () => {
             const response = await apiCall(`/api/request/cancel`, {req_id : reqId}, 'PATCH', token);
             if (response.success) {
                 setSuccessMessage('Book request cancelled successfully!');
-                fetchPendingRequests();
+                fetchPendingRequests(); // Refresh requests
             } else {
                 setError(response.message || 'Failed to cancel request.');
             }
@@ -125,7 +148,10 @@ const PendingBookRequests = () => {
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (contactCardRef.current && !contactCardRef.current.contains(event.target)) {
-                setHoveredRequestId(null);
+                // Ensure the click isn't on the info button itself
+                if (!event.target.closest('[aria-label="Show reader contact details"]')) {
+                    setHoveredRequestId(null);
+                }
             }
         };
 
@@ -148,12 +174,30 @@ const PendingBookRequests = () => {
         <div className="p-4 sm:p-6 bg-white rounded-lg shadow-sm">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Pending Book Requests</h2>
 
+            {/* Hall Selection Dropdown */}
+            <div className="mb-6 flex items-center space-x-3">
+                <label htmlFor="hall-select" className="text-gray-700 font-medium">Filter by Hall:</label>
+                <select
+                    id="hall-select"
+                    value={selectedHallId}
+                    onChange={(e) => setSelectedHallId(e.target.value)}
+                    className="mt-1 block w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+                >
+                    <option value="">All Halls</option> {/* Option to view all requests */}
+                    {halls.map((hall) => (
+                        <option key={hall.hall_id} value={hall.hall_id}>
+                            {hall.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
             {loading && <p className="text-gray-600">Loading pending requests...</p>}
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             {successMessage && <p className="text-green-500 text-sm mt-2">{successMessage}</p>}
 
             {!loading && pendingRequests.length === 0 && !error && (
-                <p className="text-gray-600">No pending book requests found for your hall.</p>
+                <p className="text-gray-600">No pending book requests found for the selected hall.</p>
             )}
 
             <div className="space-y-4">

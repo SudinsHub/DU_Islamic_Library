@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('point_histories', function (Blueprint $table) {
             $table->uuid('point_id')->primary();
             $table->foreignUuid('reader_id')->references('reader_id')->on('readers')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('book_id')->references('book_id')->on('books')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('book_id')->nullable()->references('book_id')->on('books')->constrained()->cascadeOnDelete();
             $table->foreignUuid('activity_type')->references('activity_type')->on('point_systems')->constrained()->cascadeOnDelete();
             $table->date('earned_date')->default(now());
         });

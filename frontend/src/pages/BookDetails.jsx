@@ -5,9 +5,10 @@ import BookRequestModal from "@/components/BookRequestModal";
 import SuccessModal from "@/components/SuccessModal";
 import { apiCall } from '../utils/ApiCall'; 
 import { toast } from 'react-toastify';
-import { useAuth } from "@/contexts/AuthContext"; 
+import { useAuth } from "@/contexts/AuthContext"; // Assuming you have a custom hook for authentication
 
 const BookDetails = () => {
+  const baseURL = import.meta.env.VITE_API_URL;
   const { isAuthenticated, token } = useAuth();
   const { search } = useLocation();
   const params = new URLSearchParams(search);
@@ -170,7 +171,7 @@ const BookDetails = () => {
             <div className="relative">
               <div className="bg-white rounded-lg overflow-hidden shadow-md">
                 <img 
-                  src={book.imageURL || "/api/placeholder/280/380"} 
+                  src={baseURL + book.imageURL || "/api/placeholder/280/380"} 
                   alt={book.title} 
                   className="w-full object-cover aspect-[3/4]"
                 />

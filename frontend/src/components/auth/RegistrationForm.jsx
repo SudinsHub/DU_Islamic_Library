@@ -1,18 +1,6 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext'; // Adjust path as needed
-
-// Mock data for Hall and Department dropdowns
-const mockHalls = [
-  { hall_id: 'hall-1-uuid', name: 'Shahidullah Hall' },
-  { hall_id: 'hall-2-uuid', name: 'Jagannath Hall' },
-  { hall_id: 'hall-3-uuid', name: 'Rokeya Hall' },
-];
-
-const mockDepartments = [
-  { dept_id: 'dept-1-uuid', name: 'Computer Science and Engineering' },
-  { dept_id: 'dept-2-uuid', name: 'Electrical and Electronic Engineering' },
-  { dept_id: 'dept-3-uuid', name: 'Pharmacy' },
-];
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext'; 
+import { apiCall } from '@/utils/ApiCall';
 
 /**
  * RegistrationForm component for user registration.
@@ -38,11 +26,27 @@ function RegistrationForm({ userType }) {
   const [gender, setGender] = useState(''); // For Reader
   const [address, setAddress] = useState(''); // For Volunteer
   const [roomNo, setRoomNo] = useState(''); // For Volunteer
-
+  const [halls, setHalls] = useState([]);
+  const [departments, setDepartments] = useState([]);
   // Multi-step form state for Reader/Volunteer
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 2; // For Reader and Volunteer
 
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch halls and departments if needed
+        const res1 = await apiCall("/api/halls", {}, 'GET');
+        const res2 = await apiCall("/api/departments", {}, 'GET');
+        setHalls(res1);
+        setDepartments(res2);
+      } catch (error) {
+        console.error("Error fetching halls and depts.:", error);
+      }
+    }
+    fetchData();
+  }, []);
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -74,7 +78,10 @@ function RegistrationForm({ userType }) {
         room_no: roomNo,
       };
     }
-
+    console.log('Submitting registration data:', userData);
+    console.log('User type:', userType);
+    
+    
     await register(userType, userData);
   };
 
@@ -149,12 +156,20 @@ function RegistrationForm({ userType }) {
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-200 ease-in-out text-gray-800 placeholder-gray-400"
           required
         />
+        <button
+            type="submit"
+            className="flex-1 w-full mt-6 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Registering...' : 'Register'}
+        </button>  
+
       </div>
     </div>
   );
 
   const renderReaderVolunteerForm = () => (
-    <form>
+    <div>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-2xl font-semibold text-gray-800">
           {currentStep === 1 ? 'Personal Info' : 'Academic Info'}
@@ -269,7 +284,7 @@ function RegistrationForm({ userType }) {
               required
             >
               <option value="">Select area of study</option>
-              {mockDepartments.map((dept) => (
+              {departments.map((dept) => (
                 <option key={dept.dept_id} value={dept.dept_id}>
                   {dept.name}
                 </option>
@@ -314,7 +329,7 @@ function RegistrationForm({ userType }) {
               required
             >
               <option value="">Select attached hall</option>
-              {mockHalls.map((hall) => (
+              {halls.map((hall) => (
                 <option key={hall.hall_id} value={hall.hall_id}>
                   {hall.name}
                 </option>
@@ -386,7 +401,7 @@ function RegistrationForm({ userType }) {
           </button>
         )}
       </div>
-    </form>
+    </div>
   );
 
   return (

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Wishlist;
 use Illuminate\Http\Request;
 
 class WishlistController
@@ -12,9 +13,34 @@ class WishlistController
     public function index(Request $request)
     {
         // Logic to retrieve and return the wishlist items for the authenticated user
-        $user = $request->user();
-        $wishlistItems = $user->wishlist()->with('book')->get();
+        // $user = $request->user();
+        // $wishlistItems = $user->wishlist()->with(['book', 'book.author'])->get();
+        $wishlistItems = $request->user()->wishlist()
+            ->with(['book', 'book.author'])
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'wish_id' => $item->wish_id,
+                    'book_id' => $item->book_id,
+                    'title' => $item->book->title,
+                    'author' => $item->book->author->name,
+                    'image_url' => $item->book->image_url,
+                ];
+            });
 
+
+        // $wishlistItems = Wishlist::where('reader_id', $request->user()->reader_id)
+        //     ->with(['book', 'book.author'])
+        //     ->get();    
+        //     // ->map(function ($item) {
+        //     //     return [
+        //     //         'wish_id' => $item->wish_id,
+        //     //         'book_id' => $item->book_id,
+        //     //         'title' => $item->book->title,
+        //     //         'author' => $item->book->author ? $item->book->author->name : null,
+        //     //         'image_url' => $item->book->image_url,
+        //     //     ];
+        //     // });
         return response()->json($wishlistItems);
     }
 

@@ -8,8 +8,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 // use Illuminate\Support\Str; // No longer needed as HasUuids trait handles UUID generation
 use App\Models\Admin; // Assuming these are in App\Models
+use App\Models\PointHistory;
+use App\Models\PointSystem;
 use App\Models\Reader;
 use App\Models\Volunteer;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -96,6 +99,14 @@ class AuthController extends Controller
 
             // Create a token with 'actAsReader' ability for the new reader
             $token = $reader->createToken('reader-token', ['actAsReader'])->plainTextToken;
+            $pointSystem = PointSystem::where('activity_type', 'reader_registration')->firstOrFail(); // Ensure the point system exists
+            $reader->total_points += $pointSystem->points; // Add points for registration
+            $reader->save();
+            PointHistory::create([
+                'reader_id' => $reader->reader_id,
+                'activity_type' => 'reader_registration',
+                'book_id' => null, // No book associated with registration
+            ]);
 
             return response()->json([
                 'message' => 'Reader registered successfully.',
@@ -104,11 +115,19 @@ class AuthController extends Controller
             ], 201);
 
         } catch (ValidationException $e) {
+            Log::error('Validation error during reader registration', [
+                'errors' => $e->errors(),
+                'request' => $request->all(),
+            ]);
             return response()->json([
                 'message' => 'Validation Error',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
+            Log::error('Error during reader registration', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
             return response()->json([
                 'message' => 'An error occurred during registration.',
                 'error' => $e->getMessage(),

@@ -26,10 +26,10 @@ class Wishlist extends Model
 
     //     BOOK ||--o{ WISHLIST : "added to"
     public function book() {
-        return $this->belongsTo(Book::class);
+        return $this->belongsTo(Book::class, 'book_id', 'book_id');
     }
     //     READER ||--o{ WISHLIST : adds
     public function reader() {
-        return $this->belongsTo(Reader::class);
+        return $this->belongsTo(Reader::class, 'reader_id', 'reader_id');
     }
 }

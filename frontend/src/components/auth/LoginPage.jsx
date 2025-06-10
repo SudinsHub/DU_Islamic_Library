@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext'; // Adjust path as needed
+import { useAuth } from '@/contexts/AuthContext'; // Adjust path as needed
 
 /**
  * LoginForm component for user authentication.

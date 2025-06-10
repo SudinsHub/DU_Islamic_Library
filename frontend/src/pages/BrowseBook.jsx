@@ -4,7 +4,7 @@ import LibraryBookCard from '@/components/BookCard';
 import { useLocation } from 'react-router-dom'; 
 import {apiCall} from "@/utils/ApiCall"
 import { useAuth } from '@/contexts/AuthContext'; 
-
+import { buttonGreen } from "@/utils/colors";
 const BrowseBooksPage = () => {
   const apiUrl = import.meta.env.VITE_API_URL; // Ensure this is set in your .env file
   const {token} = useAuth(); 
@@ -474,7 +474,7 @@ const BrowseBooksPage = () => {
           <div className="flex justify-center mt-8">
             <button
               onClick={handleLoadMore}
-              className="px-8 py-3 bg-indigo-600 text-white rounded-lg font-semibold text-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out"
+              className={`px-8 py-3 bg-[${buttonGreen}] text-white rounded-lg font-semibold text-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out`}
               disabled={loading}
             >
               {loading && books.length > 0 ? 'Loading more...' : 'Load More'}

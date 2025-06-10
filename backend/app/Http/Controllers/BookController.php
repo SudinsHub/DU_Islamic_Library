@@ -155,10 +155,15 @@ class BookController extends Controller
 
                 // These fields are required ONLY if it's a new book to the system (Case 1)
                 'title' => 'required_if:is_new_book,true|string|max:255',
-                'author_id' => 'required_if:is_new_book,true|nullable|uuid|exists:authors,author_id',
-                'publisher_id' => 'required_if:is_new_book,true|nullable|uuid|exists:publishers,publisher_id',
-                'category_id' => 'required_if:is_new_book,true|nullable|uuid|exists:categories,category_id',
+                'author_id' => 'nullable|uuid|exists:authors,author_id',
+                'hall_id' => 'nullable|uuid|exists:halls,hall_id',
+                'publisher_id' => 'nullable|uuid|exists:publishers,publisher_id',
+                'category_id' => 'nullable|uuid|exists:categories,category_id',
                 'description' => 'nullable|string',
+
+                'author_name' => 'required_if:author_id,null|string|max:255',
+                'publisher_name' => 'required_if:publisher_id,null|string|max:255',
+                'category_name' => 'required_if:category_id,null|string|max:255',
 
                 'copies_to_add' => 'required|integer|min:1', // Always required
 
@@ -172,25 +177,53 @@ class BookController extends Controller
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Validation Error',
+                'message' => $e->getMessage(),
                 'errors' => $e->errors()
             ], 422);
         }
 
         // Ensure the authenticated user is a volunteer and get their hall_id
         $volunteer = $request->user(); // Assuming authenticated user is the volunteer
-        if (!$volunteer || !isset($volunteer->hall_id) ) { // || !$volunteer->admin_id
+        if($request->hall_id){
+            $hallId = $request->hall_id; // Use hall_id from request if provided
+        }
+        else if(isset($volunteer->hall_id)){
+            $hallId = $volunteer->hall_id; // || $volunteer->admin_id; // Use hall_id or admin_id as needed
+        } else{
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized for inserting book.'
             ], 403);
         }
-        $hallId = $volunteer->hall_id; // || $volunteer->admin_id; // Use hall_id or admin_id as needed
+        
         $copiesToAdd = $validatedData['copies_to_add'];
         $imageUrl = null; // Initialize image URL for new books
 
         DB::beginTransaction(); // Start a database transaction for atomicity
         try {
+            if(isset($validatedData['author_name'])) {
+                // Create a new author if author_id is not provided
+                $author = \App\Models\Author::firstOrCreate(
+                    ['name' => $validatedData['author_name']],
+                );
+                $validatedData['author_id'] = $author->author_id; // Update validated data with new author_id
+            }
+            if(isset($validatedData['publisher_name'])) {
+                // Create a new publisher if publisher_id is not provided
+                $publisher = \App\Models\Publisher::firstOrCreate(
+                    ['name' => $validatedData['publisher_name']],
+                );
+                $validatedData['publisher_id'] = $publisher->publisher_id; // Update validated data with new publisher_id
+            }
+            if(isset($validatedData['category_name'])) {
+                // Create a new category if category_id is not provided
+                $category = \App\Models\Category::firstOrCreate(
+                    ['name' => $validatedData['category_name']],
+                );
+                $validatedData['category_id'] = $category->category_id; // Update validated data with new category_id
+            }
+
+
             if ($validatedData['is_new_book']) {
                 // CASE 1: The book is new to the system.
                 // (frontend sent `is_new_book: true`)
@@ -207,7 +240,6 @@ class BookController extends Controller
 
                 // Create a new Book entry
                 $book = Book::create([
-                    'book_id' => Str::uuid(), // Generate UUID for the new book
                     'title' => $validatedData['title'],
                     'author_id' => $validatedData['author_id'],
                     'publisher_id' => $validatedData['publisher_id'],
@@ -219,7 +251,6 @@ class BookController extends Controller
 
                 // Create a new entry in book_collections for this new book and the volunteer's hall
                 $bookCollection = BookCollection::create([
-                    'collection_id' => Str::uuid(), // Primary key for book_collections
                     'book_id' => $bookId,
                     'hall_id' => $hallId,
                     'total_copies' => $copiesToAdd,
@@ -273,7 +304,6 @@ class BookController extends Controller
                     // (No entry in book_collections exists for this book_id and hall_id yet)
                     // Create a new entry in book_collections for this existing book in this hall.
                     $bookCollection = BookCollection::create([
-                        'collection_id' => Str::uuid(), // Primary key for book_collections
                         'book_id' => $bookId,
                         'hall_id' => $hallId,
                         'total_copies' => $copiesToAdd,

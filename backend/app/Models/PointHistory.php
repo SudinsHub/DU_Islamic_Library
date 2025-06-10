@@ -14,7 +14,13 @@ class PointHistory extends Model
     protected $primaryKey = 'point_id';
     public $incrementing = false;
     protected $keyType = 'string';
-    // point_id
+    public $timestamps = false;
+    
+    protected $fillable = [
+        'reader_id',
+        'activity_type',
+        'book_id',
+    ];
 
     public function reader() { return $this->belongsTo(Reader::class, 'reader_id', 'reader_id'); }
     public function point_system() { return $this->belongsTo(PointSystem::class, 'activity_type', 'activity_type'); }

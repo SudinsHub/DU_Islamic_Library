@@ -24,13 +24,34 @@ const LendingBooks = () => {
     const [hoveredLendingId, setHoveredLendingId] = useState(null);
     const contactCardRef = useRef(null); // Ref for click outside logic
 
+    // New states for hall selection
+    const [halls, setHalls] = useState([]);
+    const [selectedHallId, setSelectedHallId] = useState(''); // Empty string for 'All Halls'
+
+    // --- Fetch Halls ---
+    useEffect(() => {
+        const fetchHalls = async () => {
+            try {
+                const response = await apiCall('/api/halls', {}, 'GET');
+                setHalls(response);
+            } catch (err) {
+                console.error('Network error fetching halls:', err);
+                setError(prev => prev ? prev + '\nNetwork error fetching halls.' : 'Network error fetching halls.');
+            }
+        };
+        fetchHalls();
+    }, [token]);
+
     const fetchCurrentLendings = useCallback(async () => {
         setLoading(true);
         setError(null);
         setSuccessMessage(null);
         try {
-            // Fetch lendings with status 'pending' (meaning not yet returned)
-            const response = await apiCall(`/api/lendings?status=pending`, {}, 'GET', token);
+            let apiUrl = `/api/lendings?status=pending`;
+            if (selectedHallId) {
+                apiUrl += `&hall_id=${selectedHallId}`; // Add hall_id to query params if selected
+            }
+            const response = await apiCall(apiUrl, {}, 'GET', token);
             if (response.success) {
                 // Filter for 'pending' status as per requirement, if API doesn't filter directly
                 const pendingLendings = response.data.filter(lending => lending.status === 'pending');
@@ -44,7 +65,7 @@ const LendingBooks = () => {
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, [token, selectedHallId]); // Re-run when selectedHallId changes
 
     useEffect(() => {
         fetchCurrentLendings();
@@ -79,7 +100,10 @@ const LendingBooks = () => {
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (contactCardRef.current && !contactCardRef.current.contains(event.target)) {
-                setHoveredLendingId(null);
+                 // Ensure the click isn't on the info button itself
+                 if (!event.target.closest('[aria-label="Show borrower contact details"]')) {
+                    setHoveredLendingId(null);
+                }
             }
         };
 
@@ -102,12 +126,30 @@ const LendingBooks = () => {
         <div className="p-4 sm:p-6 bg-white rounded-lg shadow-sm">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Current Lending Books</h2>
 
+            {/* Hall Selection Dropdown */}
+            <div className="mb-6 flex items-center space-x-3">
+                <label htmlFor="hall-select" className="text-gray-700 font-medium">Filter by Hall:</label>
+                <select
+                    id="hall-select"
+                    value={selectedHallId}
+                    onChange={(e) => setSelectedHallId(e.target.value)}
+                    className="mt-1 block w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+                >
+                    <option value="">All Halls</option> {/* Option to view all lendings */}
+                    {halls.map((hall) => (
+                        <option key={hall.hall_id} value={hall.hall_id}>
+                            {hall.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
             {loading && <p className="text-gray-600">Loading current lendings...</p>}
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             {successMessage && <p className="text-green-500 text-sm mt-2">{successMessage}</p>}
 
             {!loading && currentLendings.length === 0 && !error && (
-                <p className="text-gray-600">No books currently lent from your hall.</p>
+                <p className="text-gray-600">No books currently lent for the selected hall.</p>
             )}
 
             <div className="space-y-4">

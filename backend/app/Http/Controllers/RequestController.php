@@ -31,15 +31,13 @@ class RequestController extends Controller
             if ($request->user() && $request->user()->hall_id) {
                 $hallId = $request->user()->hall_id; 
             } else {
-                return response()->json(['message' => 'Hall ID is required'], Response::HTTP_BAD_REQUEST); // 400 Bad Request
+                $hallId = null; // No hall_id provided, or user not authenticated
             }
         }
         // retrieve status from query param
         $status = $request->input('status');
-
-        // Fetch all requests for the specified hall and status, eager loading relationships        
-        $requests = LibraryRequest::where('hall_id', $hallId)
-            ->where(function ($query) use ($status) {
+        if(!$hallId){
+            $requests = LibraryRequest::where(function ($query) use ($status) {
                 if ($status) {
                     $query->where('status', $status);
                 } else {
@@ -49,6 +47,20 @@ class RequestController extends Controller
             })
             ->with(['reader', 'book', 'hall'])
             ->get();
+            
+        } else{
+            $requests = LibraryRequest::where('hall_id', $hallId)
+                ->where(function ($query) use ($status) {
+                    if ($status) {
+                        $query->where('status', $status);
+                    } else {
+                        // If no status is provided, fetch all requests
+                        $query->whereIn('status', ['pending', 'fulfilled', 'cancelled']);
+                    }
+                })
+                ->with(['reader', 'book', 'hall'])
+                ->get();
+        }
         return response()->json([
             'success' => true,
             'data' => $requests
@@ -164,20 +176,18 @@ class RequestController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(LibraryRequest $request): JsonResponse
+    public function destroy(Request $request): JsonResponse
     {
-        // Before deleting, if the request was pending and decremented copies, increment them back
-        if ($request->status === 'pending') { // Only for pending requests that decremented on creation
-             $bookCollection = BookCollection::where('book_id', $request->book_id)
-                                             ->where('hall_id', $request->hall_id)
-                                             ->first();
-            if ($bookCollection) {
-                $bookCollection->increment('available_copies');
-            }
-        }
-        
-        $request->delete();
-        return response()->json(null, Response::HTTP_NO_CONTENT); // 204 No Content
+        $request->validate([
+            'req_id' => ['required', 'uuid', 'exists:requests,req_id'],
+        ]);
+        $libraryRequest = LibraryRequest::findOrFail($request->req_id);
+
+        $libraryRequest->delete();
+        return response()->json([
+            'message' => 'Request deleted successfully.',
+            'data' => $libraryRequest
+        ], Response::HTTP_OK); // 200 OK
     }
 
     // --- Custom Actions for Request Status ---
@@ -255,6 +265,23 @@ class RequestController extends Controller
             $libraryRequest->status = 'fulfilled';
             $libraryRequest->save();
 
+            $pointSystem = \App\Models\PointSystem::where('activity_type', 'book_lending')
+                ->firstOrFail();
+
+            // Add points to the reader's account
+            $reader = $libraryRequest->reader;
+            if (!$reader) {
+                return response()->json([
+                    'message' => 'Reader not found for the request.'
+                ], Response::HTTP_NOT_FOUND); // 404 Not Found
+            }
+            $reader->increment('total_points', $pointSystem->points);
+            \App\Models\PointHistory::create([
+                'reader_id' => $reader->reader_id,
+                'activity_type' => 'book_lending',
+                'book_id' => $libraryRequest->book_id,
+            ]);
+
             DB::commit();
             return response()->json([
                 'message' => 'Request fulfilled and lending created successfully.',
@@ -263,6 +290,9 @@ class RequestController extends Controller
             ])->setStatusCode(Response::HTTP_OK); // 200 OK
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to fulfill request', [
+                'error' => $e->getMessage(),
+            ]);
             return response()->json([
                 'message' => 'Failed to fulfill request.',
                 'error' => $e->getMessage()
@@ -306,6 +336,9 @@ class RequestController extends Controller
             ])->setStatusCode(Response::HTTP_OK); // 200 OK
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to cancel request', [
+                'error' => $e->getMessage(),
+            ]);
             return response()->json([
                 'message' => 'Failed to cancel request.',
                 'error' => $e->getMessage()

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Review;
+use App\Models\PointSystem;
+use App\Models\PointHistory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -27,17 +29,38 @@ class ReviewController extends Controller
      * Store a newly created resource in storage.
      * Only authenticated readers can create reviews.
      */
-    public function store(StoreReviewRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         DB::beginTransaction();
         try {
             // The reader_id is already merged into the request in StoreReviewRequest::prepareForValidation
-            $review = Review::create($request->validated());
+            $user = $request->user();
+            if (!$user || !$user->reader_id) {
+                return response()->json(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+            }
+            $request->merge(['reader_id' => $user->reader_id]);
+            $review = $request->validate([
+                'reader_id' => 'required|uuid|exists:readers,reader_id',
+                'book_id' => 'required|uuid|exists:books,book_id',
+                'rating' => 'required|integer|min:1|max:5',
+                'comment' => 'nullable|string|max:1000',
+            ]);
+            Review::create($review);
+
+            $pointSystem = PointSystem::where('activity_type', 'book_review')->firstOrFail();
+
+            $user->increment('total_points', $pointSystem->points);
+            $user->save();
+            PointHistory::create([
+                'reader_id' => $user->reader_id,
+                'activity_type' => 'book_return', 
+                'book_id' => $request->book_id,
+            ]);
 
             DB::commit();
             return response()->json([
                 'message' => 'Review created successfully.',
-                'data' => $review->load(['reader', 'book'])
+                'success' => true
             ], Response::HTTP_CREATED);
         } catch (\Exception $e) {
             DB::rollBack();

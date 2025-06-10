@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-// import { Button } from '@/components/ui/button'; 
-// import { Toggle } from '@/components/ui/toggle'; 
 import InsertBookForm from '@/components/volunteer/InsertBookForm';
 import PendingRequests from '@/components/volunteer/PendingRequests';
 import CurrentLendings from '@/components/volunteer/CurrentLendings';
 import { apiCall } from '@/utils/ApiCall'; // Assuming your API utility
 import { buttonGreen } from "@/utils/colors"; // Your custom green color
-import { useAuth } from '@/contexts/AuthContext'; 
+import { useAuth } from '@/contexts/AuthContext'; // Adjust path as needed
 import { toast } from 'react-toastify';
 const VolunteerDashboard = () => {
     const [activeSection, setActiveSection] = useState('insertBook'); // 'insertBook', 'pendingRequests', 'currentLendings'
