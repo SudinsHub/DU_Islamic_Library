@@ -82,8 +82,16 @@ Route::post('/login/volunteer', [AuthController::class, 'loginVolunteer']);
 Route::middleware('auth:sanctum')->group(function () {
     // Get currently authenticated user details
     Route::get('/user', [AuthController::class, 'user']);
-    Route::apiResource('vol', VolunteerController::class);
+    // Admin specific routes
+    Route::middleware(AdminMiddleware::class)->group(function () {
+        // Add more admin-specific routes here
+        Route::get('vol/unverified', [VolunteerController::class, 'getUnverifiedVolunteers']);
+        Route::post('vol/verify', [VolunteerController::class, 'verifyVolunteer']);
+        Route::delete('vol/deleteVolunteer', [VolunteerController::class, 'deleteVolunteer']);
+    
+    });
     Route::post('vol/toggle-availability', [VolunteerController::class, 'toggleAvailability']);
+    Route::apiResource('vol', VolunteerController::class);
     
     Route::patch('request/fulfill', [RequestController::class, 'fulfill']);
     Route::patch('request/cancel', [RequestController::class, 'cancel']);
@@ -100,10 +108,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('reviews', ReviewController::class);
     // --- Routes protected by specific role middleware ---
 
-    // Admin specific routes
-    Route::middleware(AdminMiddleware::class)->group(function () {
-        // Add more admin-specific routes here
-    });
 
     // Reader specific routes
     Route::middleware(ReaderMiddleware::class)->group(function () {

@@ -1,23 +1,37 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import LibraryBookCard from '@/components/BookCard';
-import { useLocation } from 'react-router-dom'; 
-import {apiCall} from "@/utils/ApiCall"
+import { useLocation, useNavigate } from 'react-router-dom'; 
 import { useAuth } from '@/contexts/AuthContext'; 
-import { buttonGreen } from "@/utils/colors";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
 const BrowseBooksPage = () => {
-  const apiUrl = import.meta.env.VITE_API_URL; // Ensure this is set in your .env file
-  const {token} = useAuth(); 
-  // extract search term from 
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const { token } = useAuth(); 
   const { search } = useLocation();
+  const navigate = useNavigate();
+  
+  // Extract query parameters
   const params = new URLSearchParams(search);
   const searchKey = params.get("search") || ''; 
+  const pageFromUrl = parseInt(params.get("page")) || 1;
+  
   console.log("Search Key: ", searchKey);
+  console.log("Page from URL: ", pageFromUrl);
+
   // --- State Management ---
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
 
@@ -55,6 +69,19 @@ const BrowseBooksPage = () => {
     { value: 'top_rated', label: 'Highest Rated', order: 'desc' },
   ];
 
+  // --- Helper to update URL with new page ---
+  const updateUrlWithPage = (page) => {
+    const newParams = new URLSearchParams(search);
+    if (page === 1) {
+      newParams.delete('page');
+    } else {
+      newParams.set('page', page.toString());
+    }
+    const newSearch = newParams.toString();
+    const newUrl = newSearch ? `?${newSearch}` : window.location.pathname;
+    navigate(newUrl, { replace: true });
+  };
+
   // --- Helper to determine if a filter is active ---
   const isFilterActive = (filterType, filterId) => {
     switch (filterType) {
@@ -82,62 +109,76 @@ const BrowseBooksPage = () => {
     };
   }, []);
 
+  // --- Sync currentPage with URL ---
+  useEffect(() => {
+    setCurrentPage(pageFromUrl);
+  }, [pageFromUrl]);
+
   // --- Fetch Initial Filter Data (Categories, Authors, Halls) ---
   useEffect(() => {
     const fetchFilterData = async () => {
       try {
+        const config = {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        };
+
         const [categoriesRes, authorsRes, hallsRes] = await Promise.all([
-          axios.get(`${apiUrl}/api/categories`),
-          axios.get(`${apiUrl}/api/authors`),
-          axios.get(`${apiUrl}/api/halls`),
+          axios.get(`${apiUrl}/api/categories`, config),
+          axios.get(`${apiUrl}/api/authors`, config),
+          axios.get(`${apiUrl}/api/halls`, config),
         ]);
         setCategories(categoriesRes.data);
         setAuthors(authorsRes.data);
         setHalls(hallsRes.data);
       } catch (err) {
         console.error('Error fetching filter data:', err);
-        // Handle error gracefully
       }
     };
     fetchFilterData();
-  }, []);
+  }, [apiUrl, token]);
 
   // --- Fetch Books Function ---
-  const fetchBooks = useCallback(async (page = 1, append = false) => {
+  const fetchBooks = useCallback(async (page = 1) => {
     setLoading(true);
     setError(null);
 
-    const params = {
+    const requestParams = {
       page: page,
       sort_by: sortOption.value,
       sort_order: sortOption.order,
     };
 
-    // Add filters to params (assuming backend accepts singular ID for each filter type)
+    // Add filters to params
     if (selectedCategories.length > 0) {
-      params.category_id = selectedCategories[0]; // Send only the first selected category ID
+      requestParams.category_id = selectedCategories[0];
     }
     if (selectedAuthors.length > 0) {
-      params.author_id = selectedAuthors[0]; // Send only the first selected author ID
+      requestParams.author_id = selectedAuthors[0];
     }
     if (selectedHalls.length > 0) {
-      params.hall_id = selectedHalls[0]; // Send only the first selected hall ID
+      requestParams.hall_id = selectedHalls[0];
     }
 
-    if( searchKey) {
-      params.search = searchKey; // Add search term if provided
+    if (searchKey) {
+      requestParams.search = searchKey;
     }
 
     try {
-      // const response = await axios.get(`${apiUrl}/api/books`, { params });
-      // const { data, meta } = response.data; // Destructure nested response
-      const response = await apiCall('/api/books', params, 'GET', token); // Use apiCall utility
-      const { data, meta } = response; // Destructure nested response
-      if (append) {
-        setBooks((prevBooks) => [...prevBooks, ...data]);
-      } else {
-        setBooks(data);
-      }
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        params: requestParams
+      };
+
+      const response = await axios.get(`${apiUrl}/api/books`, config);
+      const { data, meta } = response.data;
+      
+      setBooks(data);
       setCurrentPage(meta.current_page);
       setTotalPages(meta.last_page);
       setTotalResults(meta.total);
@@ -148,51 +189,55 @@ const BrowseBooksPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [sortOption, selectedCategories, selectedAuthors, selectedHalls]); // Dependencies for useCallback
+  }, [apiUrl, token, sortOption, selectedCategories, selectedAuthors, selectedHalls, searchKey]);
 
   // --- useEffect for triggering book fetch on filter/sort changes ---
   useEffect(() => {
-    fetchBooks(1, false); // Fetch from page 1, don't append (new search)
-  }, [fetchBooks]); // Dependency array for useEffect
+    fetchBooks(currentPage);
+  }, [fetchBooks, currentPage]);
 
   // --- Handlers ---
   const handleSortChange = (option) => {
     setSortOption(option);
     setShowSortOptions(false);
+    // Reset to page 1 when sorting changes
+    updateUrlWithPage(1);
   };
 
   const handleFilterToggle = (filterType, filterId) => {
     switch (filterType) {
       case 'category':
         setSelectedCategories((prev) =>
-          prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [filterId] // Single select
+          prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [filterId]
         );
         break;
       case 'author':
         setSelectedAuthors((prev) =>
-          prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [filterId] // Single select
+          prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [filterId]
         );
         break;
       case 'hall':
         setSelectedHalls((prev) =>
-          prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [filterId] // Single select
+          prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [filterId]
         );
         break;
       default:
         break;
     }
+    // Reset to page 1 when filters change
+    updateUrlWithPage(1);
   };
 
   const handleClearAllFilters = () => {
     setSelectedCategories([]);
     setSelectedAuthors([]);
     setSelectedHalls([]);
+    // Reset to page 1 when clearing filters
+    updateUrlWithPage(1);
   };
 
-  const handleLoadMore = () => {
-    if (currentPage < totalPages && !loading) {
-      fetchBooks(currentPage + 1, true); // Fetch next page and append
-    }
+  const handlePageChange = (page) => {
+    updateUrlWithPage(page);
   };
 
   // --- Filtered lists for display within dropdowns ---
@@ -226,22 +271,98 @@ const BrowseBooksPage = () => {
 
   const activeFilterLabels = getActiveFilterLabels();
 
+  // --- Generate pagination items ---
+  const generatePaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Adjust start page if we're near the end
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // Add first page and ellipsis if needed
+    if (startPage > 1) {
+      items.push(
+        <PaginationItem key={1}>
+          <PaginationLink 
+            onClick={() => handlePageChange(1)}
+            isActive={currentPage === 1}
+            className="cursor-pointer"
+          >
+            1
+          </PaginationLink>
+        </PaginationItem>
+      );
+      
+      if (startPage > 2) {
+        items.push(
+          <PaginationItem key="ellipsis-start">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+    }
+
+    // Add visible page numbers
+    for (let page = startPage; page <= endPage; page++) {
+      items.push(
+        <PaginationItem key={page}>
+          <PaginationLink 
+            onClick={() => handlePageChange(page)}
+            isActive={currentPage === page}
+            className="cursor-pointer"
+          >
+            {page}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    // Add ellipsis and last page if needed
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        items.push(
+          <PaginationItem key="ellipsis-end">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+      
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink 
+            onClick={() => handlePageChange(totalPages)}
+            isActive={currentPage === totalPages}
+            className="cursor-pointer"
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
+  };
+
   // --- Rendered Component ---
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="p-4 max-w-7xl mx-auto"> {/* Added max-w-7xl mx-auto for content width */}
+    <div className="min-h-screen bg-white">
+      <div className="p-4 max-w-7xl mx-auto">
         {/* Back button and page title */}
         <div className="flex items-center mb-4">
-          <button className="mr-3">
+          <button className="mr-3" onClick={() => window.history.back()} aria-label="Go back">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
             </svg>
           </button>
-          <h1 className="text-2xl font-bold text-gray-800">Browse Books</h1> {/* Increased title size */}
+          <h1 className="text-2xl font-bold text-gray-800">Browse Books</h1>
         </div>
 
         {/* Filter controls */}
-        <div className="flex justify-between items-center mb-4 flex-wrap gap-2"> {/* Added flex-wrap gap-2 for mobile */}
+        <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
           <div className="text-sm text-gray-600">{totalResults} results found</div>
 
           <div className="flex space-x-2">
@@ -290,7 +411,7 @@ const BrowseBooksPage = () => {
               </button>
 
               {showFilterOptions && (
-                <div className="absolute right-0 mt-2 w-72 md:w-80 lg:w-96 bg-white rounded-md shadow-lg z-50 p-4 ring-1 ring-black ring-opacity-5 focus:outline-none"> {/* Increased width */}
+                <div className="absolute right-0 mt-2 w-72 md:w-80 lg:w-96 bg-white rounded-md shadow-lg z-50 p-4 ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <h3 className="font-semibold text-lg mb-3 text-gray-800">Filter by</h3>
 
                   {/* Categories Filter */}
@@ -303,7 +424,7 @@ const BrowseBooksPage = () => {
                       value={categorySearchTerm}
                       onChange={(e) => setCategorySearchTerm(e.target.value)}
                     />
-                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar"> {/* Added custom-scrollbar */}
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                       {filteredCategories.length > 0 ? (
                         filteredCategories.map((category) => (
                           <div key={category.category_id} className="flex items-center">
@@ -335,7 +456,7 @@ const BrowseBooksPage = () => {
                       value={authorSearchTerm}
                       onChange={(e) => setAuthorSearchTerm(e.target.value)}
                     />
-                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar"> {/* Added custom-scrollbar */}
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                       {filteredAuthors.length > 0 ? (
                         filteredAuthors.map((author) => (
                           <div key={author.author_id} className="flex items-center">
@@ -367,7 +488,7 @@ const BrowseBooksPage = () => {
                       value={hallSearchTerm}
                       onChange={(e) => setHallSearchTerm(e.target.value)}
                     />
-                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar"> {/* Added custom-scrollbar */}
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                       {filteredHalls.length > 0 ? (
                         filteredHalls.map((hall) => (
                           <div key={hall.hall_id} className="flex items-center">
@@ -417,16 +538,12 @@ const BrowseBooksPage = () => {
                 {label}
                 <button
                   onClick={() => {
-                    // Logic to remove filter by label (more complex, but needed)
-                    // For simplicity with single-select backend, we clear all filters here
-                    // or match the label back to the ID to remove specific one.
                     const categoryToRemove = categories.find(c => c.name === label);
                     if (categoryToRemove) handleFilterToggle('category', categoryToRemove.category_id);
                     const authorToRemove = authors.find(a => a.name === label);
                     if (authorToRemove) handleFilterToggle('author', authorToRemove.author_id);
                     const hallToRemove = halls.find(h => h.name === label);
                     if (hallToRemove) handleFilterToggle('hall', hallToRemove.hall_id);
-
                   }}
                   className="ml-2 text-green-600 hover:text-green-800"
                 >
@@ -447,45 +564,59 @@ const BrowseBooksPage = () => {
         )}
 
         {/* Loading and Error states */}
-        {loading && books.length === 0 && <p className="text-center text-gray-700 py-8">Loading books...</p>}
+        {loading && <p className="text-center text-gray-700 py-8">Loading books...</p>}
         {error && <p className="text-center text-red-500 py-8">{error}</p>}
         {!loading && books.length === 0 && !error && <p className="text-center text-gray-700 py-8">No books found matching your criteria.</p>}
 
         {/* Book grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"> {/* Increased gap */}
-          {books.map(book => (
-            <LibraryBookCard
-              key={book.id}
-              id={book.id}
-              title={book.title}
-              author={book.author}
-              rating={book.rating}
-              ratingCount={book.ratingCount}
-              isLoved={book.isLoved}
-              availableStatus={book.availableStatus}
-              tags={book.tags}
-              imageUrl={book.imageUrl}
-            />
-          ))}
-        </div>
+        {!loading && books.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {books.map(book => (
+                <LibraryBookCard
+                  key={book.id}
+                  id={book.id}
+                  title={book.title}
+                  author={book.author}
+                  rating={book.rating}
+                  ratingCount={book.ratingCount}
+                  isLoved={book.isLoved}
+                  availableStatus={book.availableStatus}
+                  tags={book.tags}
+                  imageUrl={book.imageUrl}
+                />
+              ))}
+            </div>
 
-        {/* Load More Button */}
-        {currentPage < totalPages && (
-          <div className="flex justify-center mt-8">
-            <button
-              onClick={handleLoadMore}
-              className={`px-8 py-3 bg-[${buttonGreen}] text-white rounded-lg font-semibold text-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out`}
-              disabled={loading}
-            >
-              {loading && books.length > 0 ? 'Loading more...' : 'Load More'}
-            </button>
-          </div>
-        )}
-        {loading && books.length > 0 && (
-            <p className="text-center text-gray-500 mt-4">Loading more books...</p>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-8">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                        className={`cursor-pointer ${currentPage === 1 ? 'pointer-events-none opacity-50' : ''}`}
+                      />
+                    </PaginationItem>
+                    
+                    {generatePaginationItems()}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                        className={`cursor-pointer ${currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}`}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </>
         )}
       </div>
-       {/* Custom Scrollbar Styles (add to your CSS file or directly here if using styled-components/emotion) */}
+
+      {/* Custom Scrollbar Styles */}
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;

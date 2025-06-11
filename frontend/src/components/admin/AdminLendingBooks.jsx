@@ -124,7 +124,7 @@ const LendingBooks = () => {
 
     return (
         <div className="p-4 sm:p-6 bg-white rounded-lg shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Current Lending Books</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Currently Borrowed Books</h2>
 
             {/* Hall Selection Dropdown */}
             <div className="mb-6 flex items-center space-x-3">

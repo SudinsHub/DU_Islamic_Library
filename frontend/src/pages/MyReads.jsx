@@ -148,9 +148,6 @@ const MyReadsPage = () => {
         );
     }
 
-    const hasPendingReviews = completedReads.some(read => !read.review_id);
-    const pendingReviewCount = completedReads.filter(read => !read.review_id).length;
-
     // Common Card Component for reusability and consistent styling
     const BookCard = ({ book, type, onCancel, onReview }) => {
         const imageUrl = book.image_url || '/images/default_book_cover.jpg';
@@ -228,7 +225,7 @@ const MyReadsPage = () => {
 
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 pb-10 sm:p-6 lg:p-8"> {/* Added pb-10 for bottom padding */}
+        <div className="min-h-screen bg-white p-4 pb-10 sm:p-6 lg:p-8"> {/* Added pb-10 for bottom padding */}
             <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
                 {/* Header */}
                 <div className="flex items-center mb-6">
@@ -240,19 +237,16 @@ const MyReadsPage = () => {
                     <h1 className="text-2xl font-bold text-gray-800">My books</h1>
                 </div>
 
-                {/* Pending Reviews Banner */}
-                {hasPendingReviews && (
-                    <div className="bg-green-50 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 shadow-sm">
-                        <div className="flex items-center mb-2 sm:mb-0">
-                            <Star className="w-5 h-5 text-green-500 mr-2" />
-                            <p className="text-green-800 text-sm">
-                                You have {pendingReviewCount} pending review{pendingReviewCount > 1 ? 's' : ''} to earn points!
-                            </p>
-                        </div>
-                        {/* Optional: Add a button to navigate to pending reviews or open the first one */}
-                        {/* <Button variant="ghost" className="text-green-600 hover:text-green-700 sm:ml-4">Earn {pendingReviewCount * 25} points!</Button> */}
+                <div className="bg-green-50 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 shadow-sm">
+                    <div className="flex items-center mb-2 sm:mb-0">
+                        <Star className="w-5 h-5 text-green-500 mr-2" />
+                        <p className="text-green-800 text-sm">
+                            Review completed books to earn points!
+                        </p>
                     </div>
-                )}
+                    {/* Optional: Add a button to navigate to pending reviews or open the first one */}
+                    {/* <Button variant="ghost" className="text-green-600 hover:text-green-700 sm:ml-4">Earn {pendingReviewCount * 25} points!</Button> */}
+                </div>
 
 
                 {/* Requested Books Section */}

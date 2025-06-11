@@ -108,7 +108,7 @@ const ReaderDashboard = () => {
   const userName = user?.name || 'Reader'; // Fallback if user is null or name is missing
 
   return (
-    <div className="container mx-auto px-4 py-8 bg-gray-100 min-h-[calc(100vh-80px)]">
+    <div className="container mx-auto px-4 py-8 bg-white min-h-[calc(100vh-80px)] max-w-7xl">
       <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
         Welcome to your dashboard, {userName}!
       </h1>
@@ -168,7 +168,7 @@ const ReaderDashboard = () => {
             {activities.map((activity) => (
               <div key={activity.point_id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b last:border-b-0">
                 <div className="flex-1 mb-2 sm:mb-0">
-                  <p className="text-gray-800 font-medium">{activity.point_system?.name}</p>
+                  <p className="text-gray-800 font-medium">{activity.point_system?.description + (activity.book_id ? ": " + activity.book?.title : "")}</p>
                   <p className="text-gray-500 text-sm flex items-center gap-1">
                     <Clock className="h-4 w-4" />
                     {new Date(activity.earned_date).toLocaleDateString('en-US', {

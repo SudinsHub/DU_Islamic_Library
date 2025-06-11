@@ -40,7 +40,7 @@ class DashBoardController
         }
 
         $activities = PointHistory::where('reader_id', $reader->reader_id)
-            ->with('point_system')
+            ->with(['point_system', 'book'])
             ->limit(15)
             ->orderBy('earned_date', 'desc') 
             ->get();

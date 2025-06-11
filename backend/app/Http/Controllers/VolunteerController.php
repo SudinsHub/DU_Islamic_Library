@@ -11,38 +11,6 @@ use App\Http\Requests\UpdateVolunteerRequest;
 
 class VolunteerController extends Controller
 {
-    /** Volunteer Register */
-    public function register(Request $request)
-    {
-        $volunteer= Volunteer::create([
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'password' => $request->input('password'),
-        ]);
-
-        $token = $volunteer->createToken('volunteer-token', ['actAsVolunteer'])->plainTextToken;
-
-        return response()->json(['token' => $token, 'volunteer' => $volunteer], 201);
-    }
-
-    /** Volunteer Login */
-    public function login(Request $request)
-    {
-        $volunteer = Volunteer::where('email', $request->input->input('email'))->first();
-
-        if (!$volunteer || !Hash::check($request->input('password'), $volunteer->password)) {
-            return response()->json(['message' => 'Email or password incorrect'], 401);
-        }
-        $token = $volunteer->createToken('volunteer-token', ['actAsVolunteer'])->plainTextToken;
-        return response()->json(['token' => $token, 'volunteer' => $volunteer], 200);
-    }
-
-    /** Volunteer Logout*/
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logged out successfully'], 200);
-    }
 
     /**
      * Display a listing of the resource.
@@ -105,9 +73,26 @@ class VolunteerController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Volunteer $volunteer)
+    public function deleteVolunteer(Request $request)
     {
-        //
+        $volunteer_id = $request->input('volunteer_id');
+        // Find the volunteer by ID
+        $volunteer = Volunteer::find($volunteer_id);
+
+        // If the authenticated user is not a volunteer, return an error
+        if (!$volunteer_id) {
+            return response()->json(['message' => 'Volunteer ID required'], 401);
+        }
+
+        // Check if the volunteer exists
+        if (!$volunteer) {
+            return response()->json(['message' => 'Volunteer not found'], 404);
+        }
+
+        // Delete the volunteer
+        $volunteer->delete();
+
+        return response()->json(['message' => 'Volunteer deleted successfully'], 200);
     }
 
     public function toggleAvailability(Request $request)
@@ -119,5 +104,44 @@ class VolunteerController extends Controller
         $volunteer->save();
 
         return response()->json(['message' => 'Availability status updated successfully', 'isAvailable' => $volunteer->isAvailable], 200);
+    }
+
+    public function getUnverifiedVolunteers(Request $request)
+    {
+        try {
+                    // Fetch all volunteers who are not verified
+        $unverifiedVolunteers = Volunteer::where('isVerified', false)
+        ->with(['hall', 'department']) // Eager load hall and department relationships
+        ->select('volunteer_id', 'name', 'registration_no',  'email', 'contact', 'address', 'room_no', 'hall_id', 'dept_id', 'isVerified') 
+        ->get();
+
+        return response()->json([
+            'message' => 'Unverified volunteers retrieved successfully',
+            'unverifiedVolunteers' => $unverifiedVolunteers
+        ], 200);
+        } catch (\Exception $e) {
+            // Handle any errors that may occur
+            return response()->json(['message' => 'Error fetching unverified volunteers: ' . $e->getMessage()], 500);
+            
+        }
+
+    }
+
+    public function verifyVolunteer(Request $request)
+    {
+        // Find the volunteer by ID
+
+        
+        $volunteer = Volunteer::find($request->input('volunteer_id'));
+
+        if (!$volunteer) {
+            return response()->json(['message' => 'Volunteer not found'], 404);
+        }
+
+        // Update the isVerified status
+        $volunteer->isVerified = true;
+        $volunteer->save();
+
+        return response()->json(['message' => 'Volunteer verified successfully'], 200);
     }
 }

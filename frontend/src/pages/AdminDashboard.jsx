@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import InsertBooks from '@/components/admin/AdminInsertBook';
 import PendingRequests from '@/components/admin/AdminPendingRequests';
 import LendingBooks from '@/components/admin/AdminLendingBooks';
+import VerifyVolunteers from '@/components/admin/VerifyVolunteers';
 import { useAuth } from '@/contexts/AuthContext'; // Adjust path as needed
 import { toast } from 'react-toastify'; // Ensure react-toastify is installed and configured
 
 const AdminDashboard = () => {
     // State to manage which section is currently active
-    const [activeSection, setActiveSection] = useState('InsertBooks'); // Default active section
+    const [activeSection, setActiveSection] = useState('VerifyVolunteers'); // Default active section
     // State to store the admin's name, initialized with a placeholder
     const [adminName, setAdminName] = useState('Admin');
     // Access authentication token from AuthContext
@@ -32,7 +33,7 @@ const AdminDashboard = () => {
         // Main container for the dashboard, ensuring a minimum height and light gray background
         <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
             {/* Inner container for the dashboard content, centered and styled as a white card */}
-            <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8">
+            <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8">
                 {/* Dashboard Header Section */}
                 <div className="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4">
                     {/* Welcome message with admin's name */}
@@ -47,9 +48,21 @@ const AdminDashboard = () => {
                     <ul className="flex flex-wrap sm:flex-nowrap justify-center sm:justify-start gap-2 sm:gap-4 text-center text-sm sm:text-base font-medium border-b border-gray-200">
                         <li>
                             <button
+                                onClick={() => setActiveSection('VerifyVolunteers')}
+                                className={`py-3 px-4 rounded-t-lg transition-colors duration-200 ${
+                                    activeSection === 'VerifyVolunteers'
+                                        ? 'bg-gray-50 text-gray-900 border-b-2 border-green-500' // Active state styles
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800' // Inactive state styles
+                                }`}
+                            >
+                                Verify Volunteers
+                            </button>
+                        </li>
+                        <li>
+                            <button
                                 onClick={() => setActiveSection('InsertBooks')}
                                 className={`py-3 px-4 rounded-t-lg transition-colors duration-200 ${
-                                    activeSection === 'manageBooks'
+                                    activeSection === 'InsertBooks'
                                         ? 'bg-gray-50 text-gray-900 border-b-2 border-green-500' // Active state styles
                                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800' // Inactive state styles
                                 }`}
@@ -80,7 +93,7 @@ const AdminDashboard = () => {
                                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
                                 }`}
                             >
-                                Lending Books
+                                Pending Borrows
                             </button>
                         </li>
                         {/* Add other admin navigation items here if needed */}
@@ -93,6 +106,7 @@ const AdminDashboard = () => {
                     {activeSection === 'InsertBooks' && < InsertBooks/> }
                     {activeSection === 'PendingRequests' && < PendingRequests/>}
                     {activeSection === 'LendingBooks' && <LendingBooks/>}
+                    {activeSection === 'VerifyVolunteers' && <VerifyVolunteers/>}
                 </div>
             </div>
         </div>

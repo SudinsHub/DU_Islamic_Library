@@ -14,12 +14,12 @@ const LibraryBookCard = ({
   tags = [],
 }) => {
   const navigate = useNavigate();
-
+  const baseURL = import.meta.env.VITE_API_URL ;
   const handleClick = () => {
     navigate(`/book-details?id=${id}`);
   };
   return (
-    <div onClick={handleClick} className="max-w-sm rounded-xl bg-white p-4 shadow-md cursor-pointer">
+    <div onClick={handleClick} className="max-w-sm rounded-xl bg-white p-4 shadow-lg  cursor-pointer">
       <div className="flex justify-between items-start mb-2">
         {tags.length > 0 && (
           <div className={`bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium`}>
@@ -37,7 +37,7 @@ const LibraryBookCard = ({
 
       <div className="flex justify-center mb-4">
         <img 
-          src={imageUrl || "/api/placeholder/220/300"} 
+          src={baseURL + imageUrl || "/api/placeholder/220/300"} 
           alt={title}
           className="h-64 object-contain rounded-lg"
         />

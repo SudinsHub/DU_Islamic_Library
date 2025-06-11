@@ -29,19 +29,19 @@ class BookController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Book::query();
-
+    
         // Eager load necessary relationships for data transformation
         // 'author' and 'category' are for direct properties
-        // 'collections' is for calculating total available copies
+        // 'book_collection' is for calculating total available copies
         $query->with(['author', 'category', 'book_collection']);
-
+    
         // Add aggregations for sorting and card display without loading full collections
-        // 'reviews_avg_rating' and 'requests_count' will be added as properties to each Book model
-        $query->withAvg('review', 'rating') // Adds 'reviews_avg_rating' property
-                ->withCount('request'); // Adds 'requests_count' property
-
+        // 'review_avg_rating' and 'requests_count' will be added as properties to each Book model
+        $query->withAvg('review', 'rating') // Adds 'review_avg_rating' property
+              ->withCount('request'); // Adds 'requests_count' property
+    
         // --- Searching ---
-        if ($request->has('search')) { 
+        if ($request->has('search') && !empty($request->input('search'))) { 
             $searchTerm = '%' . $request->input('search') . '%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('books.title', 'like', $searchTerm)
@@ -50,81 +50,79 @@ class BookController extends Controller
                     });
             });
         }
-
+    
         // --- Filtering ---
         // Filter by Hall (book_collections.available_copies > 0 in a specific hall)
-        if ($request->has('hall_id')) {
+        if ($request->has('hall_id') && !empty($request->input('hall_id'))) {
             $hallId = $request->input('hall_id');
             $query->whereHas('book_collection', function ($collectionQuery) use ($hallId) {
                 $collectionQuery->where('hall_id', $hallId)->where('available_copies', '>', 0);
             });
         }
-
+    
         // Filter by Category
-        if ($request->has('category_id')) {
+        if ($request->has('category_id') && !empty($request->input('category_id'))) {
             $query->where('category_id', $request->input('category_id'));
         }
-
+    
         // Filter by Author
-        if ($request->has('author_id')) {
+        if ($request->has('author_id') && !empty($request->input('author_id'))) {
             $query->where('author_id', $request->input('author_id'));
         }
-
+    
         // --- Sorting ---
         // Default sort: recently_added in descending order
         $sortBy = $request->input('sort_by', 'recently_added');
         $sortOrder = $request->input('sort_order', 'desc'); // Can be 'asc' or 'desc'
-
+    
         switch ($sortBy) {
             case 'best_reads':
                 // Books with more requests come first.
-                // orderByDesc is a shorthand for orderBy('column', 'desc')
-                $query->orderByDesc('requests_count');
+                // Use dynamic sort order instead of hardcoded desc
+                $query->orderBy('requests_count', $sortOrder);
                 break;
             case 'top_rated':
                 // Books with higher average rating come first.
-                // COALESCE(reviews_avg_rating, 0) handles books with no reviews, treating their rating as 0 for sorting.
-                $query->orderByRaw("COALESCE(reviews_avg_rating, 0) " . ($sortOrder === 'asc' ? 'asc' : 'desc'));
+                // COALESCE(review_avg_rating, 0) handles books with no reviews, treating their rating as 0 for sorting.
+                $query->orderByRaw("COALESCE(review_avg_rating, 0) " . ($sortOrder === 'asc' ? 'asc' : 'desc'));
                 break;
             case 'recently_added':
             default:
-                $query->orderBy('updated_at', $sortOrder);
-
+                // Use created_at for "recently added" functionality, updated_at is for modifications
+                $query->orderBy('created_at', $sortOrder);
                 break;
         }
-
+    
         // Add a secondary sort by title for consistent ordering of ties
         $query->orderBy('books.title', 'asc');
-
+    
         // --- Pagination ---
-        // You can specify the number of items per page, e.g., 10, 20, etc.
-        $perPage = $request->input('per_page', 10);
+        // Increase default per page to match frontend expectations (frontend shows 4 columns)
+        $perPage = $request->input('per_page', 12);
         $books = $query->paginate($perPage);
-
+    
         // --- Format Data for Frontend LibraryBookCard ---
         $formattedBooks = $books->getCollection()->map(function ($book) use ($request) {
-            // Calculate total available copies from the eager-loaded 'collections' relationship.
+            // Calculate total available copies from the eager-loaded 'book_collection' relationship.
             $totalAvailableCopies = $book->book_collection->sum('available_copies');
-
+    
             // Determine if the book is available (boolean)
             $availableStatus = $totalAvailableCopies > 0;
             
             $isLoved = false;
             $user = Auth::guard('sanctum')->user();
             if ($user && $user->reader_id) {
-                // The Model has a wishlists() relationship that returns a collection of Book models
-                // $isLoved = $request->user()->wishlist->contains('book_id', $book->book_id);
+                // Check if book is in user's wishlist
                 $userWishlistBookIds = $user->wishlist->pluck('book_id');
                 $isLoved = $userWishlistBookIds->contains($book->book_id);
-                
             }
-
+    
             return [
                 'id' => $book->book_id,
                 'title' => $book->title,
                 'author' => $book->author ? $book->author->name : 'Unknown Author',
-                'rating' => round($book->reviews_avg_rating ?? 0, 1), // Access the aggregated average rating
-                'ratingCount' => $book->requests_count, // Access the aggregated review count
+                'rating' => round($book->review_avg_rating ?? 0, 1), // Fixed property name
+                'ratingCount' => $book->requests_count, // Access the aggregated request count
                 'isLoved' => $isLoved,
                 'availableStatus' => $availableStatus,
                 'tags' => $book->category ? $book->category->name : 'Uncategorized', // Using category name as a tag
@@ -132,7 +130,7 @@ class BookController extends Controller
                 'total_available_copies' => $totalAvailableCopies, // Raw count for display/debugging
             ];
         });
-
+    
         // Return paginated data with links and meta information for frontend pagination
         return response()->json([
             'data' => $formattedBooks,
