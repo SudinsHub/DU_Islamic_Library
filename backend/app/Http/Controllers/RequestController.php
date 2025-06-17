@@ -23,48 +23,74 @@ class RequestController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        // retrieve all requests of a certain hall 
-        if($request->has('hall_id')) {
+        // Start with a base query
+        $query = LibraryRequest::with(['reader', 'book', 'hall']);
+
+        // 1. Hall Filtering
+        $hallId = null;
+        if ($request->has('hall_id') && $request->input('hall_id') !== '') { // Check for empty string too
             $hallId = $request->input('hall_id');
-        }
-        else {
+        } else {
+            // Default to the user's hall_id if logged in and no specific hall_id is provided
             if ($request->user() && $request->user()->hall_id) {
-                $hallId = $request->user()->hall_id; 
-            } else {
-                $hallId = null; // No hall_id provided, or user not authenticated
+                $hallId = $request->user()->hall_id;
             }
         }
-        // retrieve status from query param
-        $status = $request->input('status');
-        if(!$hallId){
-            $requests = LibraryRequest::where(function ($query) use ($status) {
-                if ($status) {
-                    $query->where('status', $status);
-                } else {
-                    // If no status is provided, fetch all requests
-                    $query->whereIn('status', ['pending', 'fulfilled', 'cancelled']);
-                }
-            })
-            ->with(['reader', 'book', 'hall'])
-            ->get();
-            
-        } else{
-            $requests = LibraryRequest::where('hall_id', $hallId)
-                ->where(function ($query) use ($status) {
-                    if ($status) {
-                        $query->where('status', $status);
-                    } else {
-                        // If no status is provided, fetch all requests
-                        $query->whereIn('status', ['pending', 'fulfilled', 'cancelled']);
-                    }
-                })
-                ->with(['reader', 'book', 'hall'])
-                ->get();
+
+        if ($hallId) {
+            $query->where('hall_id', $hallId);
         }
+
+        // 2. Status Filtering
+        $status = $request->input('status');
+        if ($status && $status !== '') { // Check for empty string too for "All Statuses"
+            $query->where('status', $status);
+        } else {
+            // If no specific status, fetch all relevant statuses
+            $query->whereIn('status', ['pending', 'fulfilled', 'cancelled']);
+        }
+
+        // 3. Requested Date Filtering (Date Span)
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if ($startDate) {
+            $query->whereDate('request_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->whereDate('request_date', '<=', $endDate);
+        }
+
+        // 4. Book-wise Filtering (by title)
+        $bookTitle = $request->input('book_title');
+        if ($bookTitle) {
+            // Use whereHas to filter based on the related book's title
+            $query->whereHas('book', function ($q) use ($bookTitle) {
+                $q->where('title', 'like', '%' . $bookTitle . '%');
+            });
+        }
+
+        // 5. Requested Date Sorting
+        $sortBy = $request->input('sort_by', 'request_date'); // Default sort by request_date
+        $sortOrder = $request->input('sort_order', 'desc'); // Default sort order 'desc'
+
+        // Ensure valid sort column and order
+        $allowedSortColumns = ['request_date']; // Add other sortable columns if needed
+        $allowedSortOrders = ['asc', 'desc'];
+
+        if (in_array($sortBy, $allowedSortColumns) && in_array($sortOrder, $allowedSortOrders)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            // Fallback to default sorting if invalid parameters are provided
+            $query->orderBy('request_date', 'desc');
+        }
+
+        $requests = $query->get();
+
         return response()->json([
             'success' => true,
             'data' => $requests
-        ], Response::HTTP_OK); // 200 OK
+        ], Response::HTTP_OK);
     }
 
     /**
@@ -210,11 +236,11 @@ class RequestController extends Controller
         $libraryRequest = LibraryRequest::findOrFail($request->req_id);
         $user = $request->user();
         $handlerId = '';
-        if (!$user || !(($user->volunteer_id) ?? null)) {
+        if (!$user) {
             abort(Response::HTTP_UNAUTHORIZED, 'Authenticated user is not a recognized volunteer.');
         } else $handlerId = ($user->volunteer_id);
 
-        if ($libraryRequest->status !== 'pending') {
+        if ($libraryRequest->status !== 'pending') { 
             Log::warning('Attempt to fulfill a non-pending request', [
                 'status' => $libraryRequest->status,
             ]);

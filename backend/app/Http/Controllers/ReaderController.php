@@ -3,86 +3,86 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reader;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Requests\StoreReaderRequest;
-use App\Http\Requests\UpdateReaderRequest;
+use App\Models\Hall; // Assuming you have a Hall model
+use App\Models\Department; // Assuming you have a Department model
 
 class ReaderController extends Controller
 {
-    /** Reader Register */
-    public function register(Request $request)
-        {
-            $reader = Reader::create([
-                'name' => $request->input('name'),
-                'email' => $request->input('email'),
-                'password' => $request->input('password'),
-            ]);
+    /**
+     * Display a listing of the readers with pagination.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
+    {
+        $perPage = $request->input('per_page', 10); // Default 10 items per page
+        $readers = Reader::with(['hall', 'department'])->paginate($perPage);
 
-            $token = $reader->createToken('reader-token', ['actAsReader'])->plainTextToken;
+        return response()->json($readers);
+    }
 
-            return response()->json(['token' => $token, 'reader' => $reader], 201);
+    /**
+     * Update the specified reader in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Reader  $reader
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, Reader $reader)
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'registration_no' => 'nullable|string|max:255',
+            'session' => 'nullable|string|max:255',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('readers')->ignore($reader->reader_id, 'reader_id'),
+            ],
+            'contact' => 'nullable|string|max:255',
+            'hall_id' => 'required|uuid|exists:halls,hall_id',
+            'dept_id' => 'required|uuid|exists:departments,dept_id',
+            'isVerified' => 'boolean',
+            'total_points' => 'integer|min:0',
+            'gender' => 'nullable|in:male,female',
+            // Password update should ideally be handled separately for security
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+
+        // Handle password update if provided
+        if (isset($validatedData['password'])) {
+            $validatedData['password'] = Hash::make($validatedData['password']);
+        } else {
+            // Remove password from validated data if not provided to prevent hashing null
+            unset($validatedData['password']);
         }
 
-    /** Reader Login */
-    public function login(Request $request)
-        {
-            $reader= Reader::where('email', $request->input->input('email'))->first();
+        $reader->update($validatedData);
 
-            if (!$reader|| !Hash::check($request->input('password'), $reader->password)) {
-                return response()->json(['message' => 'Email or password incorrect'], 401);
-            }
-            $token = $reader->createToken('reader-token', ['actAsReader'])->plainTextToken;
-            return response()->json(['token' => $token, 'reader' => $reader], 200);
-        }
-
-    /** Reader Logout*/
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logged out successfully'], 200);
-    }
-
-
-
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
+        return response()->json([
+            'message' => 'Reader updated successfully!',
+            'reader' => $reader->load(['hall', 'department'])
+        ]);
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreReaderRequest $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Reader $reader)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateReaderRequest $request, Reader $reader)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
+     * Remove the specified reader from storage.
+     *
+     * @param  \App\Models\Reader  $reader
+     * @return \Illuminate\Http\Response
      */
     public function destroy(Reader $reader)
     {
-        //
+        $reader->delete();
+
+        return response()->json(['message' => 'Reader deleted successfully!']);
     }
 }

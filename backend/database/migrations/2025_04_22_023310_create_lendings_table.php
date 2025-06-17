@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('lendings', function (Blueprint $table) {
             $table->uuid('lending_id')->primary();
-            $table->foreignUuid('volunteer_id')->references('volunteer_id')->on('volunteers')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('volunteer_id')->references('volunteer_id')->on('volunteers')->constrained()->cascadeOnDelete()->nullable();
             $table->foreignUuid('req_id')->references('req_id')->on('requests')->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->date('issue_date')->default(now());

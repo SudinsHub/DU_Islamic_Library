@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Reader;
 use App\Models\Lending;
+use App\Models\PointSystem;
+use App\Models\PointHistory;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -14,9 +18,6 @@ use App\Http\Requests\UpdateLendingRequest;
 use App\Http\Requests\UpdateRequestRequest;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\BookCollection; // To update book counts
-use App\Models\PointHistory;
-use App\Models\PointSystem;
-use App\Models\Reader;
 use Illuminate\Http\Request; // Import the Request class
 use Illuminate\Support\Str; // For UUID generation if needed
 use App\Models\Request as LibraryRequest; // Alias for the Request model
@@ -28,40 +29,87 @@ class LendingController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        if($request->has('hall_id')) {
+        // Start with a base query
+        // Eager load request and its nested relationships (reader, book, hall)
+        $query = Lending::with(['request.reader', 'request.book', 'request.hall']);
+
+        // 1. Hall Filtering
+        $hallId = null;
+        if ($request->has('hall_id') && $request->input('hall_id') !== '') {
             $hallId = $request->input('hall_id');
-        }
-        else {
+        } else {
             if ($request->user() && $request->user()->hall_id) {
-                $hallId = $request->user()->hall_id; 
-            } else {
-                $hallId = null; // Default to null if no hall_id is provided
+                $hallId = $request->user()->hall_id;
             }
         }
 
-        if(!$hallId) {
-        // lending with that hall and whose status is pending
-            $lendings = Lending::with(['request.reader', 'request.book', 'request.hall'])
-                ->where('status', 'pending')
-                ->orderBy('return_date', 'desc')
-                ->get();
+        if ($hallId) {
+            // Filter lendings based on the hall_id of the associated request
+            $query->whereHas('request', function ($q) use ($hallId) {
+                $q->where('hall_id', $hallId);
+            });
         }
-        else {
-            // lending with that hall and whose status is pending
-            $lendings = Lending::with(['request.reader', 'request.book', 'request.hall'])
-            ->whereHas('request', function ($query) use ($hallId) {
-                $query->where('hall_id', $hallId);
-            })
-            ->where('status', 'pending')
-            ->orderBy('return_date', 'desc')
-            ->get();
+
+        // 2. Status Filtering
+        $status = $request->input('status');
+        if ($status && $status !== '') { // If a specific status is provided (not 'all')
+            if ($status === 'late') {
+                // For 'late' status, we only want 'pending' lendings whose return_date is in the past
+                $query->where('status', 'pending')
+                      ->whereDate('return_date', '<', Carbon::today()->toDateString());
+            } else {
+                // For 'pending' or 'returned' (or any other direct status)
+                $query->where('status', $status);
+            }
+        } else {
+            // If no status or 'all' status is requested, retrieve both 'pending' and 'returned'
+            // The 'late' distinction will be handled on the frontend for the 'all' case
+            $query->whereIn('status', ['pending', 'returned']);
         }
+
+        // 3. Date Span Filtering (issue_date or return_date)
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $dateFilterType = $request->input('date_filter_type', 'return_date'); // Default to return_date
+
+        if ($startDate && in_array($dateFilterType, ['issue_date', 'return_date'])) {
+            $query->whereDate($dateFilterType, '>=', $startDate);
+        }
+        if ($endDate && in_array($dateFilterType, ['issue_date', 'return_date'])) {
+            $query->whereDate($dateFilterType, '<=', $endDate);
+        }
+
+        // 4. Book-wise Filtering (by title)
+        $bookTitle = $request->input('book_title');
+        if ($bookTitle) {
+            // Filter lendings based on the title of the associated book through the request
+            $query->whereHas('request.book', function ($q) use ($bookTitle) {
+                $q->where('title', 'like', '%' . $bookTitle . '%');
+            });
+        }
+
+        // 5. Return Date wise Sorting
+        $sortBy = $request->input('sort_by', 'return_date'); // Default sort by return_date
+        $sortOrder = $request->input('sort_order', 'desc'); // Default sort order 'desc'
+
+        // Ensure valid sort column and order
+        $allowedSortColumns = ['return_date', 'issue_date']; // Add other sortable columns if needed
+        $allowedSortOrders = ['asc', 'desc'];
+
+        if (in_array($sortBy, $allowedSortColumns) && in_array($sortOrder, $allowedSortOrders)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            // Fallback to default sorting if invalid parameters are provided
+            $query->orderBy('return_date', 'desc');
+        }
+
+        $lendings = $query->get();
 
         return response()->json([
             'message' => 'Lendings retrieved successfully.',
             'data' => $lendings,
             'success' => true
-        ]);
+        ], Response::HTTP_OK);
     }
 
     /**

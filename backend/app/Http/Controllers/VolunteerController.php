@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Volunteer;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\StoreVolunteerRequest;
@@ -15,7 +16,7 @@ class VolunteerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function getAvailableVols(Request $request)
     {
         // fetch all volunteers with hall_id == $request->hall_id and who's isAvailable is true
         $hallId = $request->input('hall_id'); 
@@ -47,27 +48,77 @@ class VolunteerController extends Controller
         return response()->json($volunteers, 200);
     }
     /**
-     * Store a newly created resource in storage.
+     * Display a listing of the volunteers with pagination.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
-    public function store(StoreVolunteerRequest $request)
+    public function index(Request $request)
     {
-        //
+        $perPage = $request->input('per_page', 10); // Default 10 items per page
+        $volunteers = Volunteer::with(['hall', 'department'])->paginate($perPage);
+
+        return response()->json($volunteers);
     }
 
     /**
-     * Display the specified resource.
+     * Update the specified volunteer in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Volunteer  $volunteer
+     * @return \Illuminate\Http\Response
      */
-    public function show(Volunteer $volunteer)
+    public function update(Request $request, Volunteer $volunteer)
     {
-        //
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'registration_no' => 'nullable|string|max:255',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('volunteers')->ignore($volunteer->volunteer_id, 'volunteer_id'),
+            ],
+            'contact' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
+            'hall_id' => 'required|uuid|exists:halls,hall_id',
+            'dept_id' => 'required|uuid|exists:departments,dept_id',
+            'session' => 'nullable|string|max:255',
+            'isAvailable' => 'boolean',
+            'isVerified' => 'boolean',
+            'room_no' => 'nullable|integer',
+            // Password update should ideally be handled separately for security
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+
+        // Handle password update if provided
+        if (isset($validatedData['password'])) {
+            $validatedData['password'] = Hash::make($validatedData['password']);
+        } else {
+            // Remove password from validated data if not provided to prevent hashing null
+            unset($validatedData['password']);
+        }
+
+        $volunteer->update($validatedData);
+
+        return response()->json([
+            'message' => 'Volunteer updated successfully!',
+            'volunteer' => $volunteer->load(['hall', 'department'])
+        ]);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Remove the specified volunteer from storage.
+     *
+     * @param  \App\Models\Volunteer  $volunteer
+     * @return \Illuminate\Http\Response
      */
-    public function update(UpdateVolunteerRequest $request, Volunteer $volunteer)
+    public function destroy(Volunteer $volunteer)
     {
-        //
+        $volunteer->delete();
+
+        return response()->json(['message' => 'Volunteer deleted successfully!']);
     }
 
     /**

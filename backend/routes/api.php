@@ -11,6 +11,7 @@ use App\Http\Controllers\DashBoardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\HallController;
 use App\Http\Controllers\LendingController;
+use App\Http\Controllers\ReaderController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReadingHistoryController;
 use App\Http\Controllers\RequestController;
@@ -22,6 +23,7 @@ use App\Http\Middleware\VolunteerMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Models\PointSystem;
+
 // create point system model
 
 Route::post('/point', function () {
@@ -88,9 +90,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('vol/unverified', [VolunteerController::class, 'getUnverifiedVolunteers']);
         Route::post('vol/verify', [VolunteerController::class, 'verifyVolunteer']);
         Route::delete('vol/deleteVolunteer', [VolunteerController::class, 'deleteVolunteer']);
+
+        Route::apiResource('readers', ReaderController::class);
     
     });
     Route::post('vol/toggle-availability', [VolunteerController::class, 'toggleAvailability']);
+    Route::get('vol/get-available-vols', [VolunteerController::class, 'getAvailableVols']);
     Route::apiResource('vol', VolunteerController::class);
     
     Route::patch('request/fulfill', [RequestController::class, 'fulfill']);

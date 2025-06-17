@@ -51,7 +51,7 @@ const BookDetails = () => {
 
         try {
             await apiCall(`/api/request`, { book_id: book.id, hall_id: selectedCollectionPoint }, 'POST', token);
-            const availableVols = await apiCall(`/api/vol?hall_id=${selectedCollectionPoint}`, {}, 'GET', token);
+            const availableVols = await apiCall(`/api/vol/get-available-vols?hall_id=${selectedCollectionPoint}`, {}, 'GET', token);
             toast.success("Request confirmed successfully!");
             setVolunteersList(availableVols);
             setConfirmRequestOpen(false); // Close confirmation modal
