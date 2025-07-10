@@ -11,17 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+// Removed Shadcn Select imports as they are being replaced
 import { Loader2 } from 'lucide-react';
-import { apiCall } from '@/utils/ApiCall';
+import { apiCall } from '@/utils/ApiCall'; // Original import
 import { toast } from 'react-toastify';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext'; // Original import
 
 const UpdateVolunteerDialog = ({ isOpen, onClose, volunteer, onUpdateSuccess }) => {
     const { token } = useAuth();
@@ -37,8 +31,7 @@ const UpdateVolunteerDialog = ({ isOpen, onClose, volunteer, onUpdateSuccess }) 
         isAvailable: true,
         isVerified: false,
         room_no: '',
-        password: '', // For password update
-        password_confirmation: '' // For password confirmation
+        // Removed password and password_confirmation from state
     });
     const [halls, setHalls] = useState([]);
     const [departments, setDepartments] = useState([]);
@@ -59,11 +52,10 @@ const UpdateVolunteerDialog = ({ isOpen, onClose, volunteer, onUpdateSuccess }) 
                 hall_id: volunteer.hall_id || '',
                 dept_id: volunteer.dept_id || '',
                 session: volunteer.session || '',
-                isAvailable: volunteer.isAvailable || false, // Note: migration default is true
+                isAvailable: volunteer.isAvailable || false,
                 isVerified: volunteer.isVerified || false,
                 room_no: volunteer.room_no || '',
-                password: '', // Passwords are not pre-filled for security
-                password_confirmation: ''
+                // Passwords are not pre-filled and not part of the update form
             });
             fetchHallsAndDepartments();
         } else if (!isOpen) {
@@ -71,7 +63,7 @@ const UpdateVolunteerDialog = ({ isOpen, onClose, volunteer, onUpdateSuccess }) 
             setFormData({
                 name: '', registration_no: '', email: '', contact: '', address: '',
                 hall_id: '', dept_id: '', session: '', isAvailable: true, isVerified: false,
-                room_no: '', password: '', password_confirmation: ''
+                room_no: '', // No password fields to reset
             });
             setFormErrors({});
         }
@@ -95,37 +87,25 @@ const UpdateVolunteerDialog = ({ isOpen, onClose, volunteer, onUpdateSuccess }) 
     };
 
     const handleChange = (e) => {
-        const { id, value, type, checked } = e.target;
+        const { id, value, type, checked, name } = e.target; // Added 'name' for select elements
         setFormData(prev => ({
             ...prev,
-            [id]: type === 'checkbox' ? checked : value
+            // Use 'name' for select elements, 'id' for others. `name` is used for the native select elements.
+            [name || id]: type === 'checkbox' ? checked : value
         }));
     };
 
-    const handleSelectChange = (name, value) => {
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+    // Removed handleSelectChange as it's no longer needed with native select
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
         setFormErrors({});
 
-        // Basic client-side validation for password confirmation
-        if (formData.password && formData.password !== formData.password_confirmation) {
-            setFormErrors(prev => ({ ...prev, password_confirmation: 'Passwords do not match.' }));
-            setSubmitting(false);
-            return;
-        }
+        // Removed password validation as there are no password fields
 
         const dataToSend = { ...formData };
-        if (!dataToSend.password) { // Don't send password fields if empty
-            delete dataToSend.password;
-            delete dataToSend.password_confirmation;
-        }
+        // No need to delete password fields as they are no longer in formData
 
         try {
             const response = await apiCall(`/api/vol/${volunteer.volunteer_id}`, dataToSend, 'PUT', token);
@@ -183,6 +163,7 @@ const UpdateVolunteerDialog = ({ isOpen, onClose, volunteer, onUpdateSuccess }) 
                         {formErrors.address && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.address[0]}</p>}
                     </div>
 
+                    {/* Custom Select for Hall */}
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="hall_id" className="text-right">Hall</Label>
                         {loadingHallsAndDepts ? (
@@ -190,20 +171,23 @@ const UpdateVolunteerDialog = ({ isOpen, onClose, volunteer, onUpdateSuccess }) 
                                 <Loader2 className="h-4 w-4 animate-spin" /> Loading...
                             </div>
                         ) : (
-                            <Select onValueChange={(value) => handleSelectChange('hall_id', value)} value={formData.hall_id} id="hall_id">
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Select Hall" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {halls.map(hall => (
-                                        <SelectItem key={hall.hall_id} value={hall.hall_id}>{hall.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <select
+                                id="hall_id"
+                                name="hall_id" // Important for handleChange to pick up the value
+                                value={formData.hall_id}
+                                onChange={handleChange}
+                                className="col-span-3 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" // Tailwind classes for styling
+                            >
+                                <option value="" disabled>Select Hall</option>
+                                {halls.map(hall => (
+                                    <option key={hall.hall_id} value={hall.hall_id}>{hall.name}</option>
+                                ))}
+                            </select>
                         )}
                         {formErrors.hall_id && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.hall_id[0]}</p>}
                     </div>
 
+                    {/* Custom Select for Department */}
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="dept_id" className="text-right">Department</Label>
                         {loadingHallsAndDepts ? (
@@ -211,16 +195,18 @@ const UpdateVolunteerDialog = ({ isOpen, onClose, volunteer, onUpdateSuccess }) 
                                 <Loader2 className="h-4 w-4 animate-spin" /> Loading...
                             </div>
                         ) : (
-                            <Select onValueChange={(value) => handleSelectChange('dept_id', value)} value={formData.dept_id} id="dept_id">
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Select Department" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {departments.map(dept => (
-                                        <SelectItem key={dept.dept_id} value={dept.dept_id}>{dept.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <select
+                                id="dept_id"
+                                name="dept_id" // Important for handleChange to pick up the value
+                                value={formData.dept_id}
+                                onChange={handleChange}
+                                className="col-span-3 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" // Tailwind classes for styling
+                            >
+                                <option value="" disabled>Select Department</option>
+                                {departments.map(dept => (
+                                    <option key={dept.dept_id} value={dept.dept_id}>{dept.name}</option>
+                                ))}
+                            </select>
                         )}
                         {formErrors.dept_id && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.dept_id[0]}</p>}
                     </div>
@@ -234,7 +220,7 @@ const UpdateVolunteerDialog = ({ isOpen, onClose, volunteer, onUpdateSuccess }) 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="isAvailable" className="text-right">Available</Label>
                         <div className="col-span-3 flex items-center space-x-2">
-                            <Checkbox id="isAvailable" checked={formData.isAvailable} onCheckedChange={(checked) => handleSelectChange('isAvailable', checked)} />
+                            <Checkbox id="isAvailable" checked={formData.isAvailable} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isAvailable: checked }))} />
                         </div>
                         {formErrors.isAvailable && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.isAvailable[0]}</p>}
                     </div>
@@ -242,20 +228,9 @@ const UpdateVolunteerDialog = ({ isOpen, onClose, volunteer, onUpdateSuccess }) 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="isVerified" className="text-right">Verified</Label>
                         <div className="col-span-3 flex items-center space-x-2">
-                            <Checkbox id="isVerified" checked={formData.isVerified} onCheckedChange={(checked) => handleSelectChange('isVerified', checked)} />
+                            <Checkbox id="isVerified" checked={formData.isVerified} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isVerified: checked }))} />
                         </div>
                         {formErrors.isVerified && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.isVerified[0]}</p>}
-                    </div>
-
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="password" className="text-right">Password</Label>
-                        <Input id="password" type="password" value={formData.password} onChange={handleChange} className="col-span-3" placeholder="Leave blank to keep current" />
-                        {formErrors.password && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.password[0]}</p>}
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="password_confirmation" className="text-right">Confirm Password</Label>
-                        <Input id="password_confirmation" type="password" value={formData.password_confirmation} onChange={handleChange} className="col-span-3" />
-                        {formErrors.password_confirmation && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.password_confirmation[0]}</p>}
                     </div>
 
                     <DialogFooter>

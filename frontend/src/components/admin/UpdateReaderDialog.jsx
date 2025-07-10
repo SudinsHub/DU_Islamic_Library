@@ -36,8 +36,6 @@ const UpdateReaderDialog = ({ isOpen, onClose, reader, onUpdateSuccess }) => {
         isVerified: false,
         total_points: 0,
         gender: '',
-        password: '', // For password update
-        password_confirmation: '' // For password confirmation
     });
     const [halls, setHalls] = useState([]);
     const [departments, setDepartments] = useState([]);
@@ -59,8 +57,6 @@ const UpdateReaderDialog = ({ isOpen, onClose, reader, onUpdateSuccess }) => {
                 isVerified: reader.isVerified || false,
                 total_points: reader.total_points || 0,
                 gender: reader.gender || '',
-                password: '', // Passwords are not pre-filled for security
-                password_confirmation: ''
             });
             fetchHallsAndDepartments();
         } else if (!isOpen) {
@@ -68,7 +64,6 @@ const UpdateReaderDialog = ({ isOpen, onClose, reader, onUpdateSuccess }) => {
             setFormData({
                 name: '', registration_no: '', session: '', email: '', contact: '',
                 hall_id: '', dept_id: '', isVerified: false, total_points: 0, gender: '',
-                password: '', password_confirmation: ''
             });
             setFormErrors({});
         }
@@ -111,18 +106,10 @@ const UpdateReaderDialog = ({ isOpen, onClose, reader, onUpdateSuccess }) => {
         setSubmitting(true);
         setFormErrors({});
 
-        // Basic client-side validation for password confirmation
-        if (formData.password && formData.password !== formData.password_confirmation) {
-            setFormErrors(prev => ({ ...prev, password_confirmation: 'Passwords do not match.' }));
-            setSubmitting(false);
-            return;
-        }
+
 
         const dataToSend = { ...formData };
-        if (!dataToSend.password) { // Don't send password fields if empty
-            delete dataToSend.password;
-            delete dataToSend.password_confirmation;
-        }
+
 
         try {
             const response = await apiCall(`/api/readers/${reader.reader_id}`, dataToSend, 'PUT', token);
@@ -184,7 +171,6 @@ const UpdateReaderDialog = ({ isOpen, onClose, reader, onUpdateSuccess }) => {
                             <SelectContent>
                                 <SelectItem value="male">Male</SelectItem>
                                 <SelectItem value="female">Female</SelectItem>
-                                <SelectItem value="">N/A</SelectItem>
                             </SelectContent>
                         </Select>
                         {formErrors.gender && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.gender[0]}</p>}
@@ -246,16 +232,6 @@ const UpdateReaderDialog = ({ isOpen, onClose, reader, onUpdateSuccess }) => {
                         {formErrors.isVerified && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.isVerified[0]}</p>}
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="password" className="text-right">Password</Label>
-                        <Input id="password" type="password" value={formData.password} onChange={handleChange} className="col-span-3" placeholder="Leave blank to keep current" />
-                        {formErrors.password && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.password[0]}</p>}
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="password_confirmation" className="text-right">Confirm Password</Label>
-                        <Input id="password_confirmation" type="password" value={formData.password_confirmation} onChange={handleChange} className="col-span-3" />
-                        {formErrors.password_confirmation && <p className="col-span-4 text-red-500 text-xs text-right">{formErrors.password_confirmation[0]}</p>}
-                    </div>
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>

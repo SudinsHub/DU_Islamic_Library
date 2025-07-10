@@ -6,7 +6,10 @@ import { toast } from 'react-toastify';
 // Shadcn UI components
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Pencil, Trash2, Eye } from 'lucide-react';
+import { Input } from '@/components/ui/input'; // For filter input
+import { Label } from '@/components/ui/label'; // For filter labels
+// Removed Checkbox for 'isVerified' as it's no longer a filter
+import { Loader2, Pencil, Trash2, Search, X } from 'lucide-react'; // Added Search and X icons
 import {
     AlertDialog,
     AlertDialogAction,
@@ -27,7 +30,7 @@ import {
     PaginationEllipsis,
 } from "@/components/ui/pagination";
 
-import UpdateReaderDialog from '@/components/UpdateReaderDialog'; // Import the new dialog
+import UpdateReaderDialog from '@/components/admin/UpdateReaderDialog'; // Import the new dialog
 
 const AdminReadersPage = () => {
     const { token } = useAuth();
@@ -41,6 +44,14 @@ const AdminReadersPage = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0); // For total readers count
 
+    // Filter states
+    const [filterName, setFilterName] = useState('');
+    const [filterHallId, setFilterHallId] = useState('');
+    const [filterDeptId, setFilterDeptId] = useState(''); // New state for department filter
+    const [halls, setHalls] = useState([]);
+    const [departments, setDepartments] = useState([]); // New state for departments
+    const [loadingHallsAndDepts, setLoadingHallsAndDepts] = useState(true);
+
     // Update Dialog states
     const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
     const [selectedReader, setSelectedReader] = useState(null);
@@ -49,11 +60,34 @@ const AdminReadersPage = () => {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [readerToDeleteId, setReaderToDeleteId] = useState(null);
 
-    const fetchReaders = async (page = 1) => {
+    const fetchHallsAndDepartments = async () => {
+        setLoadingHallsAndDepts(true);
+        try {
+            const [hallsRes, deptsRes] = await Promise.all([
+                apiCall('/api/halls', {}, 'GET', token),
+                apiCall('/api/departments', {}, 'GET', token)
+            ]);
+            setHalls(hallsRes || []);
+            setDepartments(deptsRes || []);
+        } catch (err) {
+            console.error("Failed to fetch halls or departments for filter:", err);
+            toast.error("Failed to load hall/department options for filter.");
+        } finally {
+            setLoadingHallsAndDepts(false);
+        }
+    };
+
+    const fetchReaders = async (page = 1, filters = {}) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await apiCall(`/api/readers?page=${page}`, {}, "GET", token);
+            const queryParams = new URLSearchParams({ page });
+
+            if (filters.name) queryParams.append('name', filters.name);
+            if (filters.hall_id) queryParams.append('hall_id', filters.hall_id);
+            if (filters.dept_id) queryParams.append('dept_id', filters.dept_id); // Append department filter
+
+            const response = await apiCall(`/api/readers?${queryParams.toString()}`, {}, "GET", token);
             setReaders(response.data || []); // Laravel pagination returns 'data' array
             setTotalPages(response.last_page);
             setCurrentPage(response.current_page);
@@ -69,13 +103,39 @@ const AdminReadersPage = () => {
 
     useEffect(() => {
         if (token) {
-            fetchReaders(currentPage);
+            fetchHallsAndDepartments(); // Fetch halls and departments when component mounts
+            fetchReaders(currentPage, { filterName, filterHallId, filterDeptId });
         }
-    }, [token, currentPage]);
+    }, [token, currentPage]); // Re-fetch on token or currentPage change
+
+    // Handler to apply filters (resets to page 1)
+    const applyFilters = () => {
+        setCurrentPage(1); // Always reset to the first page when applying new filters
+        fetchReaders(1, {
+            name: filterName,
+            hall_id: filterHallId,
+            dept_id: filterDeptId
+        });
+    };
+
+    // Handler to clear filters
+    const clearFilters = () => {
+        setFilterName('');
+        setFilterHallId('');
+        setFilterDeptId('');
+        setCurrentPage(1); // Always reset to the first page when clearing filters
+        fetchReaders(1, {}); // Fetch all readers
+    };
 
     const handlePageChange = (page) => {
         if (page > 0 && page <= totalPages) {
             setCurrentPage(page);
+            // Fetch readers with current filters when changing pages
+            fetchReaders(page, {
+                name: filterName,
+                hall_id: filterHallId,
+                dept_id: filterDeptId
+            });
         }
     };
 
@@ -96,7 +156,7 @@ const AdminReadersPage = () => {
         try {
             const response = await apiCall(`/api/readers/${readerToDeleteId}`, {}, "DELETE", token);
             toast.success(response.message || 'Reader deleted successfully!');
-            fetchReaders(currentPage); // Re-fetch the list to update UI
+            fetchReaders(currentPage, { filterName, filterHallId, filterDeptId }); // Re-fetch the list to update UI, maintaining filters
         } catch (err) {
             console.error("Failed to delete reader:", err);
             toast.error(err.message || 'Failed to delete reader.');
@@ -107,7 +167,7 @@ const AdminReadersPage = () => {
         }
     };
 
-    if (loading) {
+    if (loading && !readers.length) { // Only show full loading screen if no data is present yet
         return (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
@@ -124,7 +184,7 @@ const AdminReadersPage = () => {
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
                 <div className="flex justify-center mt-4">
-                    <Button onClick={() => fetchReaders(currentPage)}>
+                    <Button onClick={() => fetchReaders(currentPage, { filterName, filterHallId, filterDeptId })}>
                         Try Again
                     </Button>
                 </div>
@@ -136,9 +196,80 @@ const AdminReadersPage = () => {
         <div className="container mx-auto p-4">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Manage Readers</h2>
 
-            {readers.length === 0 ? (
+            {/* Filter Section */}
+            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h3 className="text-lg font-semibold mb-4">Filters</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <Label htmlFor="filterName" className="mb-2 block text-sm font-medium text-gray-700">Name</Label>
+                        <Input
+                            id="filterName"
+                            placeholder="Filter by name"
+                            value={filterName}
+                            onChange={(e) => setFilterName(e.target.value)}
+                            className="w-full"
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="filterHall" className="mb-2 block text-sm font-medium text-gray-700">Hall</Label>
+                        {loadingHallsAndDepts ? (
+                             <div className="flex items-center gap-2 text-gray-500 h-10 px-3 py-2 border rounded-md w-full bg-gray-50">
+                                <Loader2 className="h-4 w-4 animate-spin" /> Loading Halls...
+                            </div>
+                        ) : (
+                            <select
+                                id="filterHall"
+                                name="filterHallId"
+                                value={filterHallId}
+                                onChange={(e) => setFilterHallId(e.target.value)}
+                                className="col-span-3 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <option value="">All Halls</option>
+                                {halls.map((hall) => (
+                                    <option key={hall.hall_id} value={hall.hall_id}>
+                                        {hall.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+                    <div>
+                        <Label htmlFor="filterDepartment" className="mb-2 block text-sm font-medium text-gray-700">Department</Label>
+                        {loadingHallsAndDepts ? (
+                             <div className="flex items-center gap-2 text-gray-500 h-10 px-3 py-2 border rounded-md w-full bg-gray-50">
+                                <Loader2 className="h-4 w-4 animate-spin" /> Loading Departments...
+                            </div>
+                        ) : (
+                            <select
+                                id="filterDepartment"
+                                name="filterDeptId"
+                                value={filterDeptId}
+                                onChange={(e) => setFilterDeptId(e.target.value)}
+                                className="col-span-3 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <option value="">All Departments</option>
+                                {departments.map((dept) => (
+                                    <option key={dept.dept_id} value={dept.dept_id}>
+                                        {dept.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+                </div>
+                <div className="flex justify-end space-x-2 mt-4">
+                    <Button onClick={clearFilters} variant="outline">
+                        <X className="mr-2 h-4 w-4" /> Clear Filters
+                    </Button>
+                    <Button onClick={applyFilters}>
+                        <Search className="mr-2 h-4 w-4" /> Apply Filters
+                    </Button>
+                </div>
+            </div>
+
+            {readers.length === 0 && !loading ? (
                 <div className="bg-white p-6 rounded-lg shadow-md text-center">
-                    <p className="text-gray-600">No readers found.</p>
+                    <p className="text-gray-600">No readers found matching your criteria.</p>
                 </div>
             ) : (
                 <>
@@ -165,8 +296,9 @@ const AdminReadersPage = () => {
                                         Department
                                     </th>
                                     <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Verified
+                                        Session
                                     </th>
+                                    {/* Removed Verified column */}
                                     <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Points
                                     </th>
@@ -197,14 +329,9 @@ const AdminReadersPage = () => {
                                             <p className="text-gray-900 whitespace-no-wrap">{reader.department ? reader.department.name : 'N/A'}</p>
                                         </td>
                                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                            <p className="text-gray-900 whitespace-no-wrap">
-                                                {reader.isVerified ? (
-                                                    <span className="text-green-600">Yes</span>
-                                                ) : (
-                                                    <span className="text-red-600">No</span>
-                                                )}
-                                            </p>
+                                            <p className="text-gray-900 whitespace-no-wrap">{reader.session ? reader.session : 'N/A'}</p>
                                         </td>
+                                        {/* Removed Verified column data */}
                                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                             <p className="text-gray-900 whitespace-no-wrap">{reader.total_points}</p>
                                         </td>
@@ -273,7 +400,7 @@ const AdminReadersPage = () => {
                     isOpen={isUpdateDialogOpen}
                     onClose={() => setIsUpdateDialogOpen(false)}
                     reader={selectedReader}
-                    onUpdateSuccess={() => fetchReaders(currentPage)} // Refresh list on successful update
+                    onUpdateSuccess={() => fetchReaders(currentPage, { filterName, filterHallId, filterDeptId })} // Refresh list on successful update, maintaining filters
                 />
             )}
 

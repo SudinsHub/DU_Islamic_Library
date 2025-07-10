@@ -101,7 +101,6 @@ const InsertBookForm = () => {
              }
              debounceTimeoutRef.current = setTimeout(async () => {
                  try {
-                     // Backend search route is /api/books/search?title=...
                      const response = await apiCall(`/api/books/search?title=${formData.title}`, {}, 'GET');
                      if (response.success) {
                          setBookSuggestions(response.data);

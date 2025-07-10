@@ -22,7 +22,49 @@ class ReaderController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->input('per_page', 10); // Default 10 items per page
-        $readers = Reader::with(['hall', 'department'])->paginate($perPage);
+
+        // Explicitly select columns to return. Adjust this list based on what is truly "necessary" for the frontend table.
+        // Keeping 'isVerified' in select for now as it's in migration, but it's removed from frontend display.
+        $query = Reader::select([
+            'reader_id',
+            'name',
+            'registration_no',
+            'email',
+            'contact',
+            'hall_id',
+            'dept_id',
+            'session',
+            'isVerified', // Kept for backend data, can be removed if not needed at all
+            'total_points',
+            'gender',
+            'created_at',
+            'updated_at',
+        ])->with(['hall', 'department']);
+
+        // Filter by name
+        if ($request->has('name') && $request->input('name') !== '') {
+            $query->where('name', 'like', '%' . $request->input('name') . '%');
+        }
+
+        // Filter by hall_id
+        if ($request->has('hall_id') && $request->input('hall_id') !== '') {
+            $query->where('hall_id', $request->input('hall_id'));
+        }
+
+        // Filter by dept_id
+        if ($request->has('dept_id') && $request->input('dept_id') !== '') {
+            $query->where('dept_id', $request->input('dept_id'));
+        }
+
+        // Note: isVerified filter removed as per request to remove frontend column.
+        // If you need to filter by isVerified on the backend without displaying it,
+        // you would add:
+        // if ($request->has('isVerified') && $request->boolean('isVerified')) {
+        //     $query->where('isVerified', true);
+        // }
+
+
+        $readers = $query->paginate($perPage);
 
         return response()->json($readers);
     }
@@ -53,17 +95,7 @@ class ReaderController extends Controller
             'isVerified' => 'boolean',
             'total_points' => 'integer|min:0',
             'gender' => 'nullable|in:male,female',
-            // Password update should ideally be handled separately for security
-            'password' => 'nullable|string|min:8|confirmed',
         ]);
-
-        // Handle password update if provided
-        if (isset($validatedData['password'])) {
-            $validatedData['password'] = Hash::make($validatedData['password']);
-        } else {
-            // Remove password from validated data if not provided to prevent hashing null
-            unset($validatedData['password']);
-        }
 
         $reader->update($validatedData);
 

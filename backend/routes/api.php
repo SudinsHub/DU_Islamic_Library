@@ -1,9 +1,8 @@
 <?php
 
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminBookController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\API\AuthorController;
-use App\Http\Controllers\API\BookCollectionController;
 use App\Http\Controllers\API\PublisherController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CategoryController;
@@ -92,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('vol/deleteVolunteer', [VolunteerController::class, 'deleteVolunteer']);
 
         Route::apiResource('readers', ReaderController::class);
+        Route::apiResource('admin-books', AdminBookController::class);
     
     });
     Route::post('vol/toggle-availability', [VolunteerController::class, 'toggleAvailability']);
@@ -145,6 +145,6 @@ Route::apiResource('departments', DepartmentController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('authors', AuthorController::class);
 Route::apiResource('halls', HallController::class);
-Route::apiResource('collections', BookCollectionController::class);
+// Route::apiResource('collections', BookCollectionController::class);
 
 Route::apiResource('reading-histories', ReadingHistoryController::class);

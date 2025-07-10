@@ -56,7 +56,30 @@ class VolunteerController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->input('per_page', 10); // Default 10 items per page
-        $volunteers = Volunteer::with(['hall', 'department'])->paginate($perPage);
+
+        $query = Volunteer::with(['hall', 'department']);
+
+        // Filter by name
+        if ($request->has('name') && $request->input('name') !== '') {
+            $query->where('name', 'like', '%' . $request->input('name') . '%');
+        }
+
+        // Filter by hall_id
+        if ($request->has('hall_id') && $request->input('hall_id') !== '') {
+            $query->where('hall_id', $request->input('hall_id'));
+        }
+
+        // Filter by isVerified
+        if ($request->has('isVerified') && $request->boolean('isVerified')) {
+            $query->where('isVerified', true);
+        }
+
+        // Filter by isAvailable
+        if ($request->has('isAvailable') && $request->boolean('isAvailable')) {
+            $query->where('isAvailable', true);
+        }
+
+        $volunteers = $query->paginate($perPage);
 
         return response()->json($volunteers);
     }
@@ -88,17 +111,9 @@ class VolunteerController extends Controller
             'isAvailable' => 'boolean',
             'isVerified' => 'boolean',
             'room_no' => 'nullable|integer',
-            // Password update should ideally be handled separately for security
-            'password' => 'nullable|string|min:8|confirmed',
+
         ]);
 
-        // Handle password update if provided
-        if (isset($validatedData['password'])) {
-            $validatedData['password'] = Hash::make($validatedData['password']);
-        } else {
-            // Remove password from validated data if not provided to prevent hashing null
-            unset($validatedData['password']);
-        }
 
         $volunteer->update($validatedData);
 
