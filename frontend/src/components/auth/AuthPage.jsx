@@ -6,66 +6,6 @@ import RegistrationForm from './RegistrationForm'; // Adjust path as needed
 import VolunteerDashboard from '@/pages/VolunteerDashboard';
 import AdminDashboard from '@/pages/AdminDashboard';
 
-// Dummy Dashboard, R lagbe na
-const Dashboard = () => {
-    const { isAuthenticated, user, userType, isLoading, error, logout } = useAuth();
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <div className="text-lg font-semibold text-gray-700">Loading authentication...</div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <div className="p-6 bg-white rounded-lg shadow-md text-red-600">Error: {error}</div>
-            </div>
-        );
-    }
-
-    if (!isAuthenticated) {
-        return null; // This component should only render if authenticated
-    }
-
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-            <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md text-center">
-                <h1 className="text-3xl font-extrabold text-gray-800 mb-4">
-                    Welcome, {user?.name} ({userType})!
-                </h1>
-                <p className="text-gray-600 mb-6">Your email: {user?.email}</p>
-                <button
-                    onClick={logout}
-                    className="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition duration-300 ease-in-out transform hover:scale-105"
-                >
-                    Logout
-                </button>
-
-                {userType === 'admin' && (
-                    <div className="mt-8 p-6 border border-blue-200 rounded-lg bg-blue-50 text-blue-800">
-                        <h2 className="text-xl font-bold mb-2">Admin Panel Access</h2>
-                        <p>You have full administrative privileges. Manage users, content, and system settings.</p>
-                    </div>
-                )}
-                {userType === 'reader' && (
-                    <div className="mt-8 p-6 border border-green-200 rounded-lg bg-green-50 text-green-800">
-                        <h2 className="text-xl font-bold mb-2">Reader Dashboard</h2>
-                        <p>Explore a vast collection of books and articles. Track your reading progress and manage your wishlist.</p>
-                    </div>
-                )}
-                {userType === 'volunteer' && (
-                    <div className="mt-8 p-6 border border-yellow-200 rounded-lg bg-yellow-50 text-yellow-800">
-                        <h2 className="text-xl font-bold mb-2">Volunteer Hub</h2>
-                        <p>View and accept tasks to help the community. Your contributions are highly valued!</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
 
 /**
  * Main authentication page component.

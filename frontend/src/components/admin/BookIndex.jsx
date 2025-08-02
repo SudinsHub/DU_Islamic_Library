@@ -1,36 +1,16 @@
-// src/pages/books/index.jsx
-import React, { useState, useEffect, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-
-// Shadcn UI Components
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Table,
-  TableHeader,
-  TableRow,
-  TableHead,
   TableBody,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
@@ -38,777 +18,753 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'react-toastify';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Loader2 } from 'lucide-react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious} from '@/components/ui/pagination';
-import { apiCall } from '@/utils/ApiCall';
-import { useAuth } from '@/contexts/AuthContext';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { toast } from 'react-toastify';
+import { useForm } from 'react-hook-form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import axios from 'axios';
 
-// --- Zod Schemas for Validation ---
-const bookSchema = z.object({
-  book_id: z.string().uuid().optional(), // Optional for new books
-  title: z.string().min(1, 'Title is required.'),
-  description: z.string().optional().nullable(),
-  author_id: z.string().uuid().nullable().optional(), // Allow null for new author by name
-  publisher_id: z.string().uuid().nullable().optional(), // Allow null for new publisher by name
-  category_id: z.string().uuid().nullable().optional(), // Allow null for new category by name
-  author_name: z.string().optional().nullable(), // For creating new author
-  publisher_name: z.string().optional().nullable(), // For creating new publisher
-  category_name: z.string().optional().nullable(), // For creating new category
-  image: typeof window === 'undefined' ? z.any().optional() : z.instanceof(File).optional().nullable(), // File object for upload
-  image_url: z.string().optional().nullable(), // For displaying current image
-});
+// ---
+// Book Form Dialog
+// ---
+const BookFormDialog = ({
+  book,
+  onSuccess,
+  isOpen,
+  onOpenChange,
+  categories,
+  authors,
+  publishers,
+}) => {
+  const { token } = useAuth();
 
-// Using a custom transform to handle potentially empty strings from form inputs
-// for optional/nullable fields to ensure they become null if empty.
-// This is good practice for sending clean data to the backend.
-const formSchema = bookSchema.transform(data => ({
-  ...data,
-  description: data.description === '' ? null : data.description,
-  author_id: data.author_id === '' ? null : data.author_id,
-  publisher_id: data.publisher_id === '' ? null : data.publisher_id,
-  category_id: data.category_id === '' ? null : data.category_id,
-  author_name: data.author_name === '' ? null : data.author_name,
-  publisher_name: data.publisher_name === '' ? null : data.publisher_name,
-  category_name: data.category_name === '' ? null : data.category_name,
-  // image_url is handled explicitly in the onSubmit, no need to transform here.
-}));
-
-
-/**
- * @typedef {Object} Book
- * @property {string} id
- * @property {string} title
- * @property {string|null} description
- * @property {string} author
- * @property {string} publisher
- * @property {string} category
- * @property {string|null} image_url
- * @property {string|null} author_id
- * @property {string|null} publisher_id
- * @property {string|null} category_id
- */
-
-/**
- * @typedef {Object} Option
- * @property {string} id
- * @property {string} name
- */
-
-/**
- * @typedef {Object} PaginationMeta
- * @property {number} current_page
- * @property {number} last_page
- * @property {number} total
- * @property {number} from
- * @property {number} to
- */
-
-/**
- * @typedef {BookFormValues}
- * @property {string} title
- * @property {string|null|undefined} description
- * @property {string|null|undefined} author_id
- * @property {string|null|undefined} publisher_id
- * @property {string|null|undefined} category_id
- * @property {string|null|undefined} author_name
- * @property {string|null|undefined} publisher_name
- * @property {string|null|undefined} category_name
- * @property {File|null|undefined} image
- * @property {string|null|undefined} image_url
- */
-
-
-// --- Main Component ---
-const BooksPage = () => {
-  const queryClient = useQueryClient();
-  const {token} = useAuth();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  /** @type {[Book|null, React.Dispatch<React.SetStateAction<Book|null>>]} */
-  const [selectedBook, setSelectedBook] = useState(null);
-  const [filters, setFilters] = useState({
-    search: '',
-    category_id: '',
-    publisher_id: '',
-    author_id: '',
+  const form = useForm({
+    defaultValues: {
+      title: book?.title || '',
+      description: book?.description || '',
+      image_url: book?.image_url || '',
+      // For existing book, set the ID. For new, or if selecting 'new', it will be the typed string.
+      author: book?.author?.author_id || '',
+      publisher: book?.publisher?.publisher_id || '',
+      category: book?.category?.category_id || '',
+    },
   });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(10); // Or use a select for this
 
-  // --- Fetching Books ---
-  const { data: booksData, isLoading: isLoadingBooks, error: booksError } = useQuery({
-    queryKey: ['books', filters, currentPage, perPage],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        per_page: perPage.toString(),
-        ...filters,
+  // State to hold the display value for author, publisher, category input
+  // This helps differentiate between typed new entries and selected existing ones
+  const [authorInput, setAuthorInput] = useState('');
+  const [publisherInput, setPublisherInput] = useState('');
+  const [categoryInput, setCategoryInput] = useState('');
+
+  useEffect(() => {
+    if (book) {
+      form.reset({
+        title: book.title,
+        description: book.description,
+        image_url: book.image_url,
+        author: book.author?.author_id || '', // Set ID for existing
+        publisher: book.publisher?.publisher_id || '',
+        category: book.category?.category_id || '',
       });
-      // Filter out empty string filters
-      for (const key in filters) {
-        if (filters[key] === '') {
-          params.delete(key);
+      // Set display values for existing book to their names
+      setAuthorInput(book.author?.name || '');
+      setPublisherInput(book.publisher?.name || '');
+      setCategoryInput(book.category?.name || '');
+    } else {
+      form.reset({
+        title: '',
+        description: '',
+        image_url: '',
+        author: '',
+        publisher: '',
+        category: '',
+      });
+      // Clear display values for new book
+      setAuthorInput('');
+      setPublisherInput('');
+      setCategoryInput('');
+    }
+  }, [book, form, isOpen]);
+
+  const onSubmit = async (values) => {
+    try {
+      if (!token) {
+        toast.error("Authentication token is missing.");
+        return;
+      }
+
+      const payload = {
+        title: values.title,
+        description: values.description,
+        image_url: values.image_url,
+        // The backend handles whether 'author', 'publisher', 'category' is an ID or a new name.
+        // So, we just send the value from the form field (which is updated by both select and input).
+        author: values.author,
+        publisher: values.publisher,
+        category: values.category,
+      };
+
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      if (book) {
+        // Update book
+        await axios.put(`${baseUrl}/api/admin-book/${book.book_id}`, payload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        toast.success("Book updated successfully!");
+      } else {
+        // Add new book
+        await axios.post(`${baseUrl}/api/admin-book`, payload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        toast.success("Book added successfully!");
+      }
+      onSuccess();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Book form submission error:", error);
+      // Check for validation errors from Laravel backend
+      if (axios.isAxiosError(error) && error.response && error.response.data && error.response.data.errors) {
+        const errors = error.response.data.errors;
+        Object.keys(errors).forEach(key => {
+          toast.error(`${key}: ${errors[key][0]}`);
+        });
+      } else {
+        toast.error(error.message || "Failed to save book.");
+      }
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px] overflow-y-scroll max-h-full">
+        <DialogHeader>
+          <DialogTitle>{book ? 'Edit Book' : 'Add New Book'}</DialogTitle>
+          <DialogDescription>
+            {book ? 'Edit the details of this book.' : 'Add a new book to the library.'}
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="image_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image URL</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Author Field */}
+            <FormItem>
+              <FormLabel>Author</FormLabel>
+              <Select
+                onValueChange={(value) => {
+                  form.setValue('author', value);
+                  const selectedAuthor = authors.find(a => a.author_id === value);
+                  setAuthorInput(selectedAuthor ? selectedAuthor.name : value); // Set display name
+                }}
+                value={form.watch('author')} // Watch the form value
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an author" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {authors.map((author) => (
+                    <SelectItem key={author.author_id} value={author.author_id}>
+                      {author.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Or type a new author name"
+                value={authorInput}
+                onChange={(e) => {
+                  setAuthorInput(e.target.value);
+                  form.setValue('author', e.target.value); // Set the form field value to the typed name
+                }}
+                className="mt-2"
+              />
+              <FormMessage />
+            </FormItem>
+
+            {/* Publisher Field */}
+            <FormItem>
+              <FormLabel>Publisher</FormLabel>
+              <Select
+                onValueChange={(value) => {
+                  form.setValue('publisher', value);
+                  const selectedPublisher = publishers.find(p => p.publisher_id === value);
+                  setPublisherInput(selectedPublisher ? selectedPublisher.name : value);
+                }}
+                value={form.watch('publisher')}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a publisher" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {publishers.map((publisher) => (
+                    <SelectItem key={publisher.publisher_id} value={publisher.publisher_id}>
+                      {publisher.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Or type a new publisher name"
+                value={publisherInput}
+                onChange={(e) => {
+                  setPublisherInput(e.target.value);
+                  form.setValue('publisher', e.target.value);
+                }}
+                className="mt-2"
+              />
+              <FormMessage />
+            </FormItem>
+
+            {/* Category Field */}
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select
+                onValueChange={(value) => {
+                  form.setValue('category', value);
+                  const selectedCategory = categories.find(c => c.category_id === value);
+                  setCategoryInput(selectedCategory ? selectedCategory.name : value);
+                }}
+                value={form.watch('category')}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.category_id} value={category.category_id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Or type a new category name"
+                value={categoryInput}
+                onChange={(e) => {
+                  setCategoryInput(e.target.value);
+                  form.setValue('category', e.target.value);
+                }}
+                className="mt-2"
+              />
+              <FormMessage />
+            </FormItem>
+
+            <DialogFooter>
+              <Button type="submit">{book ? 'Save changes' : 'Add Book'}</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ---
+// Inventory Management Dialog
+// ---
+const InventoryDialog = ({
+  book,
+  onSuccess,
+  isOpen,
+  onOpenChange,
+  halls,
+}) => {
+  const { token } = useAuth();
+  const [collections, setCollections] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      if (book && isOpen) {
+        setLoading(true);
+        try {
+          if (!token) throw new Error("Authentication token missing.");
+          const baseUrl = import.meta.env.VITE_API_URL || '';
+          const response = await axios.get(`${baseUrl}/api/admin-book/${book.book_id}/collections`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          const data = response.data;
+
+          const initialCollections = halls.map(hall => {
+            const existing = data.find(col => col.hall_id === hall.hall_id);
+            return existing ? existing : {
+              collection_id: '', // Will be generated by backend if new
+              book_id: book.book_id,
+              hall_id: hall.hall_id,
+              hall: hall, // Include hall object for display
+              available_copies: 0,
+              total_copies: 0,
+              created_at: '',
+              updated_at: '',
+            };
+          });
+          setCollections(initialCollections);
+        } catch (error) {
+          console.error("Failed to fetch book collections:", error);
+          toast.error(error.message || "Failed to fetch book collections.");
+        } finally {
+          setLoading(false);
         }
       }
+    };
+    fetchCollections();
+  }, [book, isOpen, token, halls]);
 
-      const response = await apiCall(`/api/admin-books?${params.toString()}`, {}, 'GET', token);
-      return response; // Assuming apicall directly returns the data object from the API
-    },
-    staleTime: 5 * 60 * 1000, // Cache data for 5 minutes
-  });
+  const handleCollectionChange = (
+    index,
+    field,
+    value
+  ) => {
+    const newCollections = [...collections];
+    newCollections[index] = {
+      ...newCollections[index],
+      [field]: parseInt(value) || 0,
+    };
+    setCollections(newCollections);
+  };
 
-  // --- Fetching Filter Options ---
-  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => (await apiCall('/api/categories', {}, 'GET', token)), // Adjust if your apicall returns { data: [...] }
-    staleTime: Infinity,
-  });
+  const handleSaveInventory = async () => {
+    try {
+      if (!book || !token) {
+        toast.error("Book or authentication token missing.");
+        return;
+      }
 
-  const { data: authors = [], isLoading: isLoadingAuthors } = useQuery({
-    queryKey: ['authors'],
-    queryFn: async () => (await apiCall('/api/authors', {}, 'GET', token)), // Adjust if your apicall returns { data: [...] }
-    staleTime: Infinity,
-  });
+      const payload = {
+        book_collection: collections.map(col => ({
+          collection_id: col.collection_id || null, // Send null for new collections
+          hall_id: col.hall_id,
+          available_copies: col.available_copies,
+          total_copies: col.total_copies,
+        })),
+      };
 
-  const { data: publishers = [], isLoading: isLoadingPublishers } = useQuery({
-    queryKey: ['publishers'],
-    queryFn: async () => (await apiCall('/api/publishers', {}, 'GET', token)),
-    staleTime: Infinity,
-  });
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      await axios.put(`${baseUrl}/api/admin-book/${book.book_id}/collections`, payload, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      toast.success("Inventory updated successfully!");
+      onSuccess();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Failed to update inventory:", error);
+      if (axios.isAxiosError(error) && error.response && error.response.data && error.response.data.errors) {
+        const errors = error.response.data.errors;
+        Object.keys(errors).forEach(key => {
+          toast.error(`${key}: ${errors[key][0]}`);
+        });
+      } else {
+        toast.error(error.message || "Failed to update inventory.");
+      }
+    }
+  };
+
+  if (!book) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange} >
+      <DialogContent className="sm:max-w-[700px] overflow-y-scroll max-h-dvh">
+        <DialogHeader>
+          <DialogTitle>Manage Inventory for "{book.title}"</DialogTitle>
+          <DialogDescription>
+            Adjust the number of copies available in different halls.
+          </DialogDescription>
+        </DialogHeader>
+        {loading ? (
+          <div>Loading inventory...</div>
+        ) : (
+          <div className="grid gap-4 py-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Hall</TableHead>
+                  <TableHead>Available Copies</TableHead>
+                  <TableHead>Total Copies</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {collections.map((col, index) => (
+                  <TableRow key={col.hall.hall_id}>
+                    <TableCell>{col.hall.name}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={col.available_copies}
+                        onChange={(e) => handleCollectionChange(index, 'available_copies', e.target.value)}
+                        min="0"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={col.total_copies}
+                        onChange={(e) => handleCollectionChange(index, 'total_copies', e.target.value)}
+                        min="0"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+        <DialogFooter>
+          <Button onClick={handleSaveInventory} disabled={loading}>Save Inventory</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ---
+// Main Admin Book Management Page
+// ---
+const AdminBookManagementPage = () => {
+  const { token } = useAuth();
+
+  const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const [publishers, setPublishers] = useState([]);
+  const [halls, setHalls] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+
+  // Filter states
+  const [filterTitle, setFilterTitle] = useState('');
+  const [filterHall, setFilterHall] = useState('');
+  const [filterAuthor, setFilterAuthor] = useState('');
+  const [filterPublisher, setFilterPublisher] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
+  // Dialog states
+  const [isBookFormOpen, setIsBookFormOpen] = useState(false);
+  const [editingBook, setEditingBook] = useState(null);
+  const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
+  const [managingBook, setManagingBook] = useState(null);
 
 
-  // --- Edit Form Setup ---
-  const form = useForm({
-    resolver: zodResolver(formSchema), // Use the transformed schema
-    defaultValues: {
-      title: '',
-      description: '',
-      author_id: '', // Use empty string for select defaults if null is not handled well
-      publisher_id: '',
-      category_id: '',
-      author_name: '',
-      publisher_name: '',
-      category_name: '',
-      image: null,
-      image_url: null,
-    },
-  });
+  const fetchBooks = useCallback(async (page = 1) => {
+    setLoading(true);
+    try {
+      if (!token) throw new Error("Authentication token missing.");
 
-  // Populate form when a book is selected for editing
+      const params = {
+        page: page,
+        ...(filterTitle && { title: filterTitle }),
+        ...(filterHall && { hall_id: filterHall }),
+        ...(filterAuthor && { author_id: filterAuthor }),
+        ...(filterPublisher && { publisher_id: filterPublisher }),
+        ...(filterCategory && { category_id: filterCategory }),
+      };
+
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const response = await axios.get(`${baseUrl}/api/admin-book`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        params: params,
+      });
+      setBooks(response.data.data);
+      setCurrentPage(response.data.current_page);
+      setLastPage(response.data.last_page);
+    } catch (error) {
+      console.error("Failed to fetch books:", error);
+      toast.error(error.message || "Failed to fetch books.");
+    } finally {
+      setLoading(false);
+    }
+  }, [token, filterTitle, filterHall, filterAuthor, filterPublisher, filterCategory]);
+
+  const fetchDependencies = useCallback(async () => {
+    try {
+      if (!token) throw new Error("Authentication token missing.");
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+
+      const [categoriesResponse, authorsResponse, publishersResponse, hallsResponse] = await Promise.all([
+        axios.get(`${baseUrl}/api/categories`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        axios.get(`${baseUrl}/api/authors`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        axios.get(`${baseUrl}/api/publishers`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        axios.get(`${baseUrl}/api/halls`, { headers: { 'Authorization': `Bearer ${token}` } }),
+      ]);
+      setCategories(categoriesResponse.data);
+      setAuthors(authorsResponse.data);
+      setPublishers(publishersResponse.data);
+      setHalls(hallsResponse.data);
+    } catch (error) {
+      console.error("Failed to fetch dependencies:", error);
+      toast.error(error.message || "Failed to fetch dependencies (categories, authors, etc.).");
+    }
+  }, [token]);
+
   useEffect(() => {
-    if (selectedBook && isEditDialogOpen) {
-      console.log('Selected Book:', selectedBook);
-      
-      form.reset({
-        book_id: selectedBook.book_id,
-        title: selectedBook.title,
-        description: selectedBook.description || '', // Ensure empty string for textareas
-        author_id: selectedBook.author_id || '',
-        publisher_id: selectedBook.publisher_id || '',
-        category_id: selectedBook.category_id || '',
-        // If an ID exists, the name field should be empty as it's not used for existing entries
-        author_name: selectedBook.author_id ? '' : (selectedBook.author || ''),
-        publisher_name: selectedBook.publisher_id ? '' : (selectedBook.publisher || ''),
-        category_name: selectedBook.category_id ? '' : (selectedBook.category || ''),
-        image: null, // Clear image input on edit, new file must be selected
-        image_url: selectedBook.image_url,
-      });
+    fetchDependencies();
+  }, [fetchDependencies]);
+
+  useEffect(() => {
+    console.log("Fetching books again. Page no:", currentPage);
+    fetchBooks(currentPage);
+  }, [fetchBooks, currentPage]);
+
+
+  const handleAddBookClick = () => {
+    setEditingBook(null);
+    setIsBookFormOpen(true);
+  };
+
+  const handleEditBookClick = (book) => {
+    setEditingBook(book);
+    setIsBookFormOpen(true);
+  };
+
+  const handleDeleteBook = async (bookId) => {
+    if (!window.confirm('Are you sure you want to delete this book? This will also delete all its inventory records.')) {
+      return;
     }
-  }, [selectedBook, isEditDialogOpen, form]);
-
-  // --- Update Book Mutation ---
-  const updateBookMutation = useMutation({
-    mutationFn: async (values) => {
-      const formData = new FormData();
-      formData.append('title', values.title);
-      formData.append('description', values.description || '');
-
-      // Conditionally append ID or Name for author, publisher, category
-      // Backend expects either ID OR Name, not both for the "create if not exists" logic
-      if (values.author_id) {
-          formData.append('author_id', values.author_id);
-      } else if (values.author_name) {
-          formData.append('author_name', values.author_name);
-      }
-
-      if (values.publisher_id) {
-          formData.append('publisher_id', values.publisher_id);
-      } else if (values.publisher_name) {
-          formData.append('publisher_name', values.publisher_name);
-      }
-
-      if (values.category_id) {
-          formData.append('category_id', values.category_id);
-      } else if (values.category_name) {
-          formData.append('category_name', values.category_name);
-      }
-
-      if (values.image) {
-        formData.append('image', values.image);
-      } else if (selectedBook?.image_url && !values.image_url) {
-        // This condition means user explicitly removed the image
-        // Send a specific indicator to backend to clear the image
-        formData.append('clear_image', 'true');
-      }
-
-      formData.append('_method', 'PUT'); // Laravel expects this for PUT with FormData
-
-      // The apicall function needs to handle FormData correctly.
-      // Assuming it detects FormData and sets 'Content-Type': 'multipart/form-data'
-      const response = await apiCall(`/api/admin-books/${selectedBook?.id}`, formData, 'POST', token);
-      return response;
-    },
-    onSuccess: () => {
-      toast.success({
-        title: 'Book updated successfully!',
-        description: 'The book details have been refreshed.',
+    try {
+      if (!token) throw new Error("Authentication token missing.");
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      await axios.delete(`${baseUrl}/api/admin-book/${bookId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
-      setIsEditDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['books'] }); // Invalidate and refetch books list
-      queryClient.invalidateQueries({ queryKey: ['book', selectedBook?.id] }); // Invalidate single book cache
-      // Also invalidate author, publisher, category lists if new ones might have been created
-      queryClient.invalidateQueries({ queryKey: ['authors'] });
-      queryClient.invalidateQueries({ queryKey: ['publishers'] });
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-    },
-    onError: (error) => {
-      // Assuming apicall throws an error object with a 'response.data.message' structure
-      toast.error({
-        title: 'Failed to update book.',
-        description: error.response?.data?.message || 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const onSubmit = (values) => {
-    updateBookMutation.mutate(values);
-  };
-
-  // --- Delete Book Mutation ---
-  const deleteBookMutation = useMutation({
-    mutationFn: async (bookId) => {
-      await apiCall(`/api/admin-books/${bookId}`, {}, 'DELETE', token);
-    },
-    onSuccess: () => {
-      toast.success({
-        title: 'Book deleted successfully!',
-        description: 'The book has been removed from the system.',
-      });
-      setIsEditDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['books'] });
-    },
-    onError: (error) => {
-      toast.error({
-        title: 'Failed to delete book.',
-        description: error.response?.data?.message || 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const handleDeleteBook = (bookId) => {
-    deleteBookMutation.mutate(bookId);
-  };
-
-  // --- Event Handlers ---
-  const handleEditClick = (book) => {
-    setSelectedBook(book);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleFilterChange = (filterName, value) => {
-    if( value === 'all') {
-        value = ''; // Convert 'all' to empty string for filtering
+      toast.success("Book deleted successfully!");
+      fetchBooks(currentPage);
+    } catch (error) {
+      console.error("Failed to delete book:", error);
+      toast.error(error.message || "Failed to delete book.");
     }
-    setFilters(prev => ({ ...prev, [filterName]: value }));
-    setCurrentPage(1); // Reset to first page on filter change
   };
 
-  const handleSearchChange = (e) => {
-    setFilters(prev => ({ ...prev, search: e.target.value }));
-    setCurrentPage(1);
+  const handleManageInventoryClick = (book) => {
+    setManagingBook(book);
+    setIsInventoryDialogOpen(true);
   };
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  // --- Table Columns ---
-  const columns = useMemo(() => [
-    {
-      accessorKey: 'title',
-      header: 'Title',
-    },
-    {
-      accessorKey: 'author',
-      header: 'Author',
-    },
-    {
-      accessorKey: 'publisher',
-      header: 'Publisher',
-    },
-    {
-      accessorKey: 'category',
-      header: 'Category',
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleEditClick(row.original)}>
-              Edit
-            </DropdownMenuItem>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}> {/* Prevent closing dropdown */}
-                  Delete
-                </DropdownMenuItem>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the book
-                    and remove its data from our servers.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleDeleteBook(row.original.id)}>
-                    Continue
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ], []);
-
-
-  if (isLoadingBooks) {
-    return <div className="flex justify-center items-center h-screen"><Loader2 /> Loading books...</div>;
-  }
-
-  if (booksError) {
-    return <div className="text-red-500">Error loading books: {booksError.message}</div>;
-  }
-
-  const books = booksData?.data || [];
-  const meta = booksData?.meta;
-
-  const currentImageUrl = form.watch('image_url');
-  const selectedImageFile = form.watch('image');
-
 
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">Manage Books</h1>
 
-      {/* Search and Filter Section */}
-      <div className="flex flex-wrap gap-4 mb-6 items-end">
-        <div className="flex-1 min-w-[200px]">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Search Title</label>
-          <Input
-            placeholder="Search by title..."
-            value={filters.search}
-            onChange={handleSearchChange}
-          />
-        </div>
-        <div className="min-w-[150px]">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Category</label>
-          <Select
-            value={filters.category_id}
-            onValueChange={(value) => handleFilterChange('category_id', value)}
-            disabled={isLoadingCategories}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="min-w-[150px]">
-        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Publisher</label>
-          <Select
-            value={filters.publisher_id}
-            onValueChange={(value) => handleFilterChange('publisher_id', value)}
-            disabled={isLoadingPublishers}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by Publisher" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Publishers</SelectItem>
-              {publishers.map((pub) => (
-                <SelectItem key={pub.publisher_id} value={pub.publisher_id}>
-                  {pub.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="min-w-[150px]">
-        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Author</label>
-          <Select
-            value={filters.author_id}
-            onValueChange={(value) => handleFilterChange('author_id', value)}
-            disabled={isLoadingAuthors}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by Author" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Authors</SelectItem>
-              {authors.map((auth) => (
-                <SelectItem key={auth.author_id} value={auth.author_id}>
-                  {auth.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button onClick={() => setFilters({ search: '', category_id: '', publisher_id: '', author_id: '' })}>
-          Clear Filters
-        </Button>
-      </div>
-
-      {/* Books Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {columns.map(column => (
-                <TableHead key={column.id || String(column.accessorKey)}>
-                  {typeof column.header === 'string' ? column.header : ''}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {books.length > 0 ? (
-              books.map((book) => (
-                <TableRow key={book.book_id}>
-                  {columns.map(column => (
-                    <TableCell key={column.id || String(column.accessorKey)}>
-                       {column.id === 'actions' ? column.cell({ row: { original: book } }): (typeof book[String(column.accessorKey)] === 'object' && book[String(column.accessorKey)] !== null? book[String(column.accessorKey)].name // Access the 'name' property for objects
-                        : book[String(column.accessorKey)])
-                        || 'N/A' // Fallback for undefined values
-                        }
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No books found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      {meta && meta.last_page > 1 && (
-        <Pagination className="mt-4">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              />
-            </PaginationItem>
-            {/* Render pages (simplified for brevity, consider a more advanced pagination component for many pages) */}
-            {Array.from({ length: meta.last_page }, (_, i) => i + 1).map((page) => (
-              <PaginationItem key={page}>
-                <PaginationLink
-                  onClick={() => handlePageChange(page)}
-                  isActive={page === currentPage}
-                >
-                  {page}
-                </PaginationLink>
-              </PaginationItem>
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+        <Input
+          placeholder="Filter by Title"
+          value={filterTitle}
+          onChange={(e) => setFilterTitle(e.target.value)}
+        />
+        <Select value={filterHall} onValueChange={setFilterHall}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by Hall" />
+          </SelectTrigger>
+          <SelectContent>
+            {/* <SelectItem value="">All Halls</SelectItem> Option to clear filter */}
+            {halls.map((hall) => (
+              <SelectItem key={hall.hall_id} value={hall.hall_id}>
+                {hall.name}
+              </SelectItem>
             ))}
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => handlePageChange(Math.min(meta.last_page, currentPage + 1))}
-                disabled={currentPage === meta.last_page}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+          </SelectContent>
+        </Select>
+        <Select value={filterAuthor} onValueChange={setFilterAuthor}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by Author" />
+          </SelectTrigger>
+          <SelectContent>
+            {/* <SelectItem value="">All Authors</SelectItem> Option to clear filter */}
+            {authors.map((author) => (
+              <SelectItem key={author.author_id} value={author.author_id}>
+                {author.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterPublisher} onValueChange={setFilterPublisher}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by Publisher" />
+          </SelectTrigger>
+          <SelectContent>
+            {/* <SelectItem value="">All Publishers</SelectItem> Option to clear filter */}
+            {publishers.map((publisher) => (
+              <SelectItem key={publisher.publisher_id} value={publisher.publisher_id}>
+                {publisher.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by Category" />
+          </SelectTrigger>
+          <SelectContent>
+            {/* <SelectItem value="">All Categories</SelectItem> Option to clear filter */}
+            {categories.map((category) => (
+              <SelectItem key={category.category_id} value={category.category_id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button onClick={() => fetchBooks(1)} className="col-span-full md:col-span-1">Apply Filters</Button>
+        <Button variant="outline" onClick={() => {
+          setFilterTitle('');
+          setFilterHall('');
+          setFilterAuthor('');
+          setFilterPublisher('');
+          setFilterCategory('');
+          fetchBooks(1);
+        }} className="col-span-full md:col-span-1">Reset Filters</Button>
+      </div>
+
+      <div className="flex justify-end mb-4">
+        <Button onClick={handleAddBookClick}>Add New Book</Button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8">Loading books...</div>
+      ) : (
+        <>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Author</TableHead>
+                  <TableHead>Publisher</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {books.length > 0 ? (
+                  books.map((book) => (
+                    <TableRow key={book.book_id}>
+                      <TableCell className="font-medium">{book.title}</TableCell>
+                      <TableCell>{book.author?.name || 'N/A'}</TableCell>
+                      <TableCell>{book.publisher?.name || 'N/A'}</TableCell>
+                      <TableCell>{book.category?.name || 'N/A'}</TableCell>
+                      <TableCell className="space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEditBookClick(book)}>Edit</Button>
+                        <Button variant="outline" size="sm" onClick={() => handleManageInventoryClick(book)}>Manage Inventory</Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteBook(book.book_id)}>Delete</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      No books found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex justify-between items-center mt-4">
+            <Button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <span>
+              Page {currentPage} of {lastPage}
+            </span>
+            <Button
+              onClick={() => setCurrentPage((prev) => Math.min(lastPage, prev + 1))}
+              disabled={currentPage === lastPage}
+            >
+              Next
+            </Button>
+          </div>
+        </>
       )}
 
+      <BookFormDialog
+        book={editingBook}
+        onSuccess={() => fetchBooks(currentPage)}
+        isOpen={isBookFormOpen}
+        onOpenChange={setIsBookFormOpen}
+        categories={categories}
+        authors={authors}
+        publishers={publishers}
+      />
 
-      {/* Edit Book Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Book: {selectedBook?.title}</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Author Selector/Creator */}
-              <FormField
-                control={form.control}
-                name="author_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Author</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingAuthors}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an author" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {/* <SelectItem value="">-- Select Existing or Add New --</SelectItem> */}
-                        {authors.map((author) => (
-                          <SelectItem key={author.author_id} value={author.author_id}>
-                            {author.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {!form.watch('author_id') && ( // Only show if no existing author is selected
-                <FormField
-                  control={form.control}
-                  name="author_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>New Author Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter new author name if not found above" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {/* Publisher Selector/Creator */}
-              <FormField
-                control={form.control}
-                name="publisher_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Publisher</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingPublishers}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a publisher" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {/* <SelectItem value="">-- Select Existing or Add New --</SelectItem> */}
-                        {publishers.map((publisher) => (
-                          <SelectItem key={publisher.id} value={publisher.id}>
-                            {publisher.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {!form.watch('publisher_id') && ( // Only show if no existing publisher is selected
-                <FormField
-                  control={form.control}
-                  name="publisher_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>New Publisher Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter new publisher name if not found above" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {/* Category Selector/Creator */}
-              <FormField
-                control={form.control}
-                name="category_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingCategories}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {/* <SelectItem value="">-- Select Existing or Add New --</SelectItem> */}
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {!form.watch('category_id') && ( // Only show if no existing category is selected
-                <FormField
-                  control={form.control}
-                  name="category_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>New Category Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter new category name if not found above" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {/* Image Upload */}
-              <FormField
-                control={form.control}
-                name="image"
-                render={({ field: { value, onChange, ...fieldProps } }) => (
-                  <FormItem>
-                    <FormLabel>Book Cover Image</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...fieldProps}
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => {
-                          onChange(event.target.files && event.target.files[0]);
-                          // Clear image_url if new file selected to force re-render/logic
-                          form.setValue('image_url', null, { shouldValidate: true });
-                        }}
-                      />
-                    </FormControl>
-                    {/* Display current image or selected new image preview */}
-                    {(currentImageUrl && !selectedImageFile) && ( // Show current image if no new file selected
-                      <div className="mt-2 flex items-center gap-4">
-                        <img
-                          src={currentImageUrl}
-                          alt="Current Book Cover"
-                          className="w-32 h-32 object-contain border rounded"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            form.setValue('image', null, { shouldValidate: true });
-                            form.setValue('image_url', null, { shouldValidate: true }); // Explicitly clear for backend
-                          }}
-                        >
-                          Remove Current Image
-                        </Button>
-                      </div>
-                    )}
-                    {selectedImageFile && ( // Show preview of newly selected file
-                       <div className="mt-2 flex items-center gap-4">
-                        <img
-                          src={URL.createObjectURL(selectedImageFile)}
-                          alt="New Book Cover Preview"
-                          className="w-32 h-32 object-contain border rounded"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            form.setValue('image', null, { shouldValidate: true });
-                            // Optionally restore original image_url if user cancels new file selection
-                            form.setValue('image_url', selectedBook?.image_url || null, { shouldValidate: true });
-                          }}
-                        >
-                          Cancel New Image
-                        </Button>
-                      </div>
-                    )}
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-
-              <DialogFooter>
-                <Button type="submit" disabled={updateBookMutation.isPending}>
-                  {updateBookMutation.isPending ? <Spinner className="mr-2" /> : 'Save Changes'}
-                </Button>
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={updateBookMutation.isPending}>
-                  Cancel
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      <InventoryDialog
+        book={managingBook}
+        onSuccess={() => fetchBooks(currentPage)}
+        isOpen={isInventoryDialogOpen}
+        onOpenChange={setIsInventoryDialogOpen}
+        halls={halls}
+      />
     </div>
   );
 };
 
-export default BooksPage;
+export default AdminBookManagementPage;

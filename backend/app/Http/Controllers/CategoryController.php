@@ -24,6 +24,12 @@ class CategoryController
         return response()->json($categories);
     }
 
+    public function indexPaginated()
+    {
+        $categories = \App\Models\Category::paginate(15);
+        return response()->json($categories);
+    }
+
     /**
      * Store a newly created resource in storage.
      */

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,6 +28,14 @@ class Author extends Model
     // If you don't want Laravel to manage `created_at` and `updated_at`,
     // you should explicitly disable them:
     public $timestamps = false;
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            $model->{$model->getKeyName()} = (string) Str::uuid();
+        });
+    }
 
     public function book() { return $this->hasMany(Book::class, 'author_id', 'author_id'); }
 }

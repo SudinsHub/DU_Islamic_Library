@@ -26,6 +26,13 @@ class PublisherController
         return response()->json($publishers);
     }
 
+    public function indexPaginated()
+    {
+        // Fetch all publishers with pagination
+        $publishers = Publisher::paginate(15);
+        return response()->json($publishers);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -59,7 +66,20 @@ class PublisherController
      */
     public function update(Request $request, string $id)
     {
-        //
+        // Validate the request
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        // Find the publisher by ID
+        $publisher = Publisher::findOrFail($id);
+
+        // Update the publisher
+        $publisher->update([
+            'name' => $request->name,
+        ]);
+
+        return response()->json($publisher);
     }
 
     /**

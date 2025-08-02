@@ -8,6 +8,7 @@ import { toast } from 'react-toastify'; // Ensure react-toastify is installed an
 import AdminReadersPage from "@/components/admin/AdminReadersPage";
 import VolunteersPage from "@/components/admin/AdminVolunteersPage";
 import BookIndex from '@/components/admin/BookIndex';
+import EntityManagement from '@/components/admin/EntityManagement';
 const AdminDashboard = () => {
     // State to manage which section is currently active
     const [activeSection, setActiveSection] = useState('VerifyVolunteers'); // Default active section
@@ -134,6 +135,18 @@ const AdminDashboard = () => {
                                 Book Index
                             </button>
                         </li>
+                        <li>
+                            <button
+                                onClick={() => setActiveSection('EntityManagement')}
+                                className={`py-3 px-4 rounded-t-lg transition-colors duration-200 ${
+                                    activeSection === 'EntityManagement'
+                                        ? 'bg-gray-50 text-gray-900 border-b-2 border-green-500'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                                }`}
+                            >
+                                Entity Management
+                            </button>
+                        </li>
                         {/* Add other admin navigation items here if needed */}
                     </ul>
                 </nav>
@@ -148,6 +161,7 @@ const AdminDashboard = () => {
                     {activeSection === 'ReadersPage' && <AdminReadersPage/>}
                     {activeSection === 'VolunteersPage' && <VolunteersPage/>}
                     {activeSection === 'BookIndex' && <BookIndex/>}
+                    {activeSection === 'EntityManagement' && <EntityManagement/>}
                 </div>
             </div>
         </div>

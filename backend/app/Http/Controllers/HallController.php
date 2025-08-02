@@ -11,12 +11,14 @@ class HallController
      */
     public function index()
     {
-        //    HALL {
-        // string hall_id PK
-        // string name } 
-        // Fetch all halls' name 
-        // Gender DUE
+
         $halls = \App\Models\Hall::all();
+        return response()->json($halls);
+    }
+    public function indexPaginated()
+    {
+
+        $halls = \App\Models\Hall::paginate(15);
         return response()->json($halls);
     }
 
@@ -25,7 +27,17 @@ class HallController
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255',
+            // gender: required, male or female
+            'gender' => 'required'
+        ]);
+        $hall = \App\Models\Hall::create([
+            'name' => $request->name,
+            'gender' => $request->gender,
+        ]);
+        return response()->json($hall, 201);
+
     }
 
     /**
@@ -33,7 +45,8 @@ class HallController
      */
     public function show(string $id)
     {
-        //
+        $hall = \App\Models\Hall::findOrFail($id);
+        return response()->json($hall);
     }
 
     /**
@@ -41,7 +54,16 @@ class HallController
      */
     public function update(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'gender' => 'required|in:male,female',
+        ]);
+        $hall = \App\Models\Hall::findOrFail($id);
+        $hall->update([
+            'name' => $request->name,
+            'gender' => $request->gender,
+        ]);
+        return response()->json($hall);
     }
 
     /**
@@ -49,6 +71,8 @@ class HallController
      */
     public function destroy(string $id)
     {
-        //
+        $hall = \App\Models\Hall::findOrFail($id);
+        $hall->delete();
+        return response()->json(null, 204);
     }
 }

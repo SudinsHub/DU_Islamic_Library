@@ -20,8 +20,8 @@ return new class extends Migration
             $table->timestamps();
             $table->unique(['book_id', 'hall_id']);
             
-            $table->foreign('book_id')->references('book_id')->on('books');
-            $table->foreign('hall_id')->references('hall_id')->on('halls');
+            $table->foreign('book_id')->references('book_id')->on('books')->onDelete('cascade');
+            $table->foreign('hall_id')->references('hall_id')->on('halls')->onDelete('cascade');
         });
         
     }

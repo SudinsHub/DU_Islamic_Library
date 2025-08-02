@@ -12,6 +12,11 @@ class DepartmentController
         $departments = Department::all();
         return response()->json($departments);
     }
+    public function indexPaginated(Request $request)
+    {
+        $departments = Department::paginate(15);
+        return response()->json($departments);
+    }
     public function show($id)
     {
         $department = Department::findOrFail($id);

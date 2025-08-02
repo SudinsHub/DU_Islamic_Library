@@ -33,6 +33,7 @@ export const apiCall = async (endpoint, data, method = 'POST', token = null) => 
                 fetchOptions.body = data;
             } else {
                 // For regular JSON data (plain objects), stringify and set Content-Type.
+                
                 fetchOptions.body = JSON.stringify(data);
                 fetchOptions.headers['Content-Type'] = 'application/json';
             }

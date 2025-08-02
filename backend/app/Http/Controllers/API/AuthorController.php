@@ -10,6 +10,12 @@ class AuthorController
     /**
      * Display a listing of the resource.
      */
+
+    public function indexPaginated(){
+        // Fetch all authors with pagination
+        $authors = Author::paginate(15);
+        return response()->json($authors);
+    }
     public function index()
     {
         // if there is a query parameter 'search', filter authors by name
@@ -59,7 +65,20 @@ class AuthorController
      */
     public function update(Request $request, string $id)
     {
-        //
+        // Validate the request
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        // Find the author by ID
+        $author = Author::findOrFail($id);
+
+        // Update the author's name
+        $author->update([
+            'name' => $request->name,
+        ]);
+
+        return response()->json($author);
     }
 
     /**

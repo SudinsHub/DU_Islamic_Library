@@ -13,16 +13,16 @@ return new class extends Migration
     {
         Schema::create('books', function (Blueprint $table) {
             $table->uuid('book_id')->primary();
-            $table->uuid('publisher_id');
-            $table->uuid('author_id');
-            $table->uuid('category_id');
+            $table->uuid('publisher_id')->nullable();
+            $table->uuid('author_id')->nullable();
+            $table->uuid('category_id')->nullable();
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('image_url', 2048)->nullable();
             
-            $table->foreign('publisher_id')->references('publisher_id')->on('publishers');
-            $table->foreign('author_id')->references('author_id')->on('authors');
-            $table->foreign('category_id')->references('category_id')->on('categories');
+            $table->foreign('publisher_id')->references('publisher_id')->on('publishers')->onDelete('set null');
+            $table->foreign('author_id')->references('author_id')->on('authors')->onDelete('set null');
+            $table->foreign('category_id')->references('category_id')->on('categories')->onDelete('set null');
         });
         
     }

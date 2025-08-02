@@ -21,9 +21,9 @@ use App\Http\Middleware\ReaderMiddleware;
 use App\Http\Middleware\VolunteerMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 use App\Models\PointSystem;
 
-// create point system model
 
 Route::post('/point', function () {
     PointSystem::create([
@@ -64,7 +64,12 @@ Route::post('/point', function () {
     return response()->json(['message' => 'Point system created successfully.']);
 });
 
-
+Route::get('/', function () {
+    return response()->json(['message' => 'API is running', 'status' => 'OK']);
+});
+Route::get('/message', function () {
+    return response()->json(['message' => 'This is a message', 'status' => 'OK']);
+});
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -91,7 +96,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('vol/deleteVolunteer', [VolunteerController::class, 'deleteVolunteer']);
 
         Route::apiResource('readers', ReaderController::class);
-        Route::apiResource('admin-books', AdminBookController::class);
+        Route::apiResource('admin-book', AdminBookController::class);
+        Route::get('admin-book/{book}/collections', [AdminBookController::class, 'getBookCollections']);
+        Route::put('admin-book/{book}/collections', [AdminBookController::class, 'manageBookCollections']);
     
     });
     Route::post('vol/toggle-availability', [VolunteerController::class, 'toggleAvailability']);
@@ -140,6 +147,11 @@ Route::middleware('auth:sanctum')->group(function () {
 // router for books
 Route::get('books/search', [BookController::class, 'search']);
 Route::apiResource('books', BookController::class)->except(['store']);  
+Route::get('publishers/get-paginated', [PublisherController::class, 'indexPaginated']);
+Route::get('authors/get-paginated', [AuthorController::class, 'indexPaginated']);
+Route::get('categories/get-paginated', [CategoryController::class, 'indexPaginated']);
+Route::get('halls/get-paginated', [HallController::class, 'indexPaginated']);
+Route::get('departments/get-paginated', [DepartmentController::class, 'indexPaginated']);
 Route::apiResource('publishers', PublisherController::class);
 Route::apiResource('departments', DepartmentController::class);
 Route::apiResource('categories', CategoryController::class);
@@ -148,3 +160,20 @@ Route::apiResource('halls', HallController::class);
 // Route::apiResource('collections', BookCollectionController::class);
 
 Route::apiResource('reading-histories', ReadingHistoryController::class);
+
+Route::get('/run-migrations', function () {
+    
+    try {
+        Artisan::call('migrate', ['--force' => true]);
+        $output = Artisan::output();
+        return response()->json([
+            'status' => 'success',
+            'output' => $output
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ]);
+    }
+});
