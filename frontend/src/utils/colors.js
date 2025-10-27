@@ -1,0 +1,1 @@
+export const buttonGreen = '#0CCE6B'

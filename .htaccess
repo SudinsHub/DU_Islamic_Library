@@ -1,0 +1,20 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect all /api requests to Laravel
+    RewriteCond %{REQUEST_URI} ^/api
+    RewriteRule ^api(/.*)?$ api/index.php [L]
+    
+    # # Allow access to storage (handled by Laravel public/storage symlink)
+    # RewriteCond %{REQUEST_URI} ^/storage
+    # RewriteRule ^storage/(.*)$ laravel-backend/public/storage/$1 [L]
+
+    # # Allow access to storage (handled by Laravel public/storage symlink)
+    RewriteCond %{REQUEST_URI} ^/storage
+    RewriteRule ^storage/(.*)$ laravel-backend/storage/app/public/$1 [L]
+
+    # If the request is not a real file or directory, send to React (index.html)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.html [L]
+</IfModule>
