@@ -11,11 +11,71 @@ use App\Models\PointHistory;
 use App\Models\PointSystem;
 use App\Models\Reader;
 use App\Models\Volunteer;
+use App\Services\MailService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
+        protected $mailService;
+
+    public function __construct(MailService $mailService)
+    {
+        $this->mailService = $mailService;
+    }
+
+    // Step 1: Handle forgot password request
+    public function sendResetLink(Request $request)
+    {
+        $request->validate(['email' => 'required|email',
+            'role' => 'required|in:admin,reader,volunteer'
+        ]);
+
+        $role  = $request->role;
+        $userModel = null;
+        switch ($role) {
+            case 'admin':
+                $userModel = Admin::class;
+                break;
+            case 'reader':
+                $userModel = Reader::class;
+                break;
+            case 'volunteer':
+                $userModel = Volunteer::class;
+                break;
+        }
+
+        $user = $userModel::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'Email not found'], 404);
+        }
+
+        // Generate token and store
+        $token = Str::random(60);
+        DB::table('password_resets')->updateOrInsert(
+            ['email' => $user->email],
+            ['token' => $token, 'created_at' => Carbon::now()]
+        );
+
+        // Send mail using our MailService
+        $resetLink = url("/reset-password?token=$token&email=" . urlencode($user->email));
+        $mailData = [
+            'name' => $user->name,
+            'resetLink' => $resetLink,
+        ];
+        $this->mailService->sendMail(
+            $user->email,
+            'Password Reset Request',
+            'emails.reset-password',
+            $mailData
+        );
+
+        return response()->json(['message' => 'Reset link sent to your email.']);
+    }
+
+
     /**
      * Register a new Admin user.
      *
@@ -385,4 +445,6 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+
 }

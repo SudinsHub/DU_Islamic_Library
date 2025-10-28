@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext'; // Adjust path as needed
-
+import {useNavigate} from 'react-router-dom' 
 /**
  * LoginForm component for user authentication.
  *
@@ -10,11 +10,15 @@ function LoginForm({ userType }) {
   const { login, isLoading, error } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
+  const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
     await login(userType, email, password);
   };
+
+  const handleForgotPassword = () => {    
+    navigate('/reset-password', { state: { userType } });
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -59,7 +63,7 @@ function LoginForm({ userType }) {
       </button>
 
       <div className="text-center text-sm">
-        <a href="#" className="text-blue-600 hover:underline">
+        <a onClick={handleForgotPassword} className="text-blue-600 hover:underline">
           Forgot password?
         </a>
       </div>

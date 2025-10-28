@@ -8,6 +8,8 @@ import BrowseBooksPage from '../pages/BrowseBook';
 import BookDetails from '../pages/BookDetails';
 import AuthPage from '@/components/auth/AuthPage';
 import ReaderDashboard from '@/components/reader/ReaderDashboard';
+import ResetPassword from '@/components/auth/ResetPassword';
+
 const AppRoutes = () => {
   return (
     <Routes>
@@ -19,10 +21,10 @@ const AppRoutes = () => {
         <Route path="my-reads" element={<MyReads />} />
         <Route path="browse-books" element={<BrowseBooksPage />} />
         <Route path="book-details" element={<BookDetails />} />
+        <Route path="reset-password" element={<ResetPassword />} />
 
         <Route path="user/:userType" element={<AuthPage />} />
       </Route>
-
 
     </Routes>
   );
