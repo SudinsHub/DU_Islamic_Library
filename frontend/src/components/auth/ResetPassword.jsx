@@ -25,11 +25,12 @@ function ResetPassword() {
 
   const handleDialogueClose = () => {
     setOpen(false);
-    navigate('/login/' + userType); 
+    navigate('/user/' + userType); 
 }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto my-8">
+<>
+<form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto my-8">
       <div className="text-center text-gray-700 mb-4">
         Enter your email address to receive a password reset link.
       </div>
@@ -58,6 +59,8 @@ function ResetPassword() {
         {isLoading ? 'Loading...' : 'Send Reset Link'}
       </button>
 
+
+    </form>
         <AlertDialog open={open} onOpenChange={setOpen}>
           <AlertDialogHeader>
             <AlertDialogTitle>Reset Password</AlertDialogTitle>
@@ -69,8 +72,7 @@ function ResetPassword() {
             <AlertDialogAction onClick={handleDialogueClose}>Close</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialog>
-
-    </form>
+    </>
   );
 }
 

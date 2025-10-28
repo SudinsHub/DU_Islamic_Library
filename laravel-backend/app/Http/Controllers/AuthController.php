@@ -29,50 +29,68 @@ class AuthController extends Controller
     // Step 1: Handle forgot password request
     public function sendResetLink(Request $request)
     {
-        $request->validate(['email' => 'required|email',
-            'role' => 'required|in:admin,reader,volunteer'
-        ]);
+        // wrap with try-catch for error handling
+        try {
 
-        $role  = $request->role;
-        $userModel = null;
-        switch ($role) {
-            case 'admin':
-                $userModel = Admin::class;
-                break;
-            case 'reader':
-                $userModel = Reader::class;
-                break;
-            case 'volunteer':
-                $userModel = Volunteer::class;
-                break;
+            $request->validate(['email' => 'required|email',
+                'role' => 'required|in:admin,reader,volunteer'
+            ]);
+
+            $role  = $request->role;
+            $userModel = null;
+            switch ($role) {
+                case 'admin':
+                    $userModel = Admin::class;
+                    break;
+                case 'reader':
+                    $userModel = Reader::class;
+                    break;
+                case 'volunteer':
+                    $userModel = Volunteer::class;
+                    break;
+            }
+
+            $user = $userModel::where('email', $request->email)->first();
+            if (!$user) {
+                return response()->json(['message' => 'Email not found'], 404);
+            }
+
+            // Generate token and store
+            $token = Str::random(60);
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $user->email],
+                ['token' => $token, 'created_at' => Carbon::now()]
+            );
+
+            // Send mail using our MailService
+            $resetLink = url("/reset-password?token=$token&email=" . urlencode($user->email));
+            $mailData = [
+                'name' => $user->name,
+                'resetLink' => $resetLink,
+            ];
+            $this->mailService->sendMail(
+                $user->email,
+                'Password Reset Request',
+                'emails.reset-password',
+                $mailData
+            );
+
+            return response()->json(['message' => 'Reset link sent to your email.']);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error during sending reset link', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+            return response()->json([
+                'message' => 'An error occurred while sending reset link.',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        $user = $userModel::where('email', $request->email)->first();
-        if (!$user) {
-            return response()->json(['message' => 'Email not found'], 404);
-        }
-
-        // Generate token and store
-        $token = Str::random(60);
-        DB::table('password_resets')->updateOrInsert(
-            ['email' => $user->email],
-            ['token' => $token, 'created_at' => Carbon::now()]
-        );
-
-        // Send mail using our MailService
-        $resetLink = url("/reset-password?token=$token&email=" . urlencode($user->email));
-        $mailData = [
-            'name' => $user->name,
-            'resetLink' => $resetLink,
-        ];
-        $this->mailService->sendMail(
-            $user->email,
-            'Password Reset Request',
-            'emails.reset-password',
-            $mailData
-        );
-
-        return response()->json(['message' => 'Reset link sent to your email.']);
     }
 
 
