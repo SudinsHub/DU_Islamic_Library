@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext'; 
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {AlertDialog, AlertDialogAction, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+import {AlertDialog, AlertDialogAction, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogContent
 } from '@/components/ui/alert-dialog'
 /**
  * LoginForm component for user authentication.
@@ -62,6 +62,7 @@ function ResetPassword() {
 
     </form>
         <AlertDialog open={open} onOpenChange={setOpen}>
+          <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Reset Password</AlertDialogTitle>
           </AlertDialogHeader>
@@ -71,7 +72,8 @@ function ResetPassword() {
           <AlertDialogFooter>
             <AlertDialogAction onClick={handleDialogueClose}>Close</AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialog>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

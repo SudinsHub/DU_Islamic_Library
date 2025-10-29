@@ -33,10 +33,10 @@ class AuthController extends Controller
         try {
 
             $request->validate(['email' => 'required|email',
-                'role' => 'required|in:admin,reader,volunteer'
+                'userType' => 'required|in:admin,reader,volunteer'
             ]);
 
-            $role  = $request->role;
+            $role  = $request->userType;
             $userModel = null;
             switch ($role) {
                 case 'admin':
