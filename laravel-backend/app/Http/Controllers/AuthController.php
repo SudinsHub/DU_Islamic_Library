@@ -26,7 +26,6 @@ class AuthController extends Controller
         $this->mailService = $mailService;
     }
 
-    // Step 1: Handle forgot password request
     public function sendResetLink(Request $request)
     {
         // wrap with try-catch for error handling
