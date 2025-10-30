@@ -84,6 +84,7 @@ Route::post('/login/admin', [AuthController::class, 'loginAdmin']);
 Route::post('/login/reader', [AuthController::class, 'loginReader']);
 Route::post('/login/volunteer', [AuthController::class, 'loginVolunteer']);
 Route::post('/reset-password', [AuthController::class, 'sendResetLink']);
+Route::post('/confirm-password', [AuthController::class, 'confirmPassword']);
 
 // Protected routes that require a valid Sanctum token
 Route::middleware('auth:sanctum')->group(function () {

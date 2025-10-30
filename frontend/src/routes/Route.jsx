@@ -9,6 +9,7 @@ import BookDetails from '../pages/BookDetails';
 import AuthPage from '@/components/auth/AuthPage';
 import ReaderDashboard from '@/components/reader/ReaderDashboard';
 import ResetPassword from '@/components/auth/ResetPassword';
+import ConfirmPassword from '@/pages/ConfirmPassword';
 
 const AppRoutes = () => {
   return (
@@ -22,6 +23,7 @@ const AppRoutes = () => {
         <Route path="browse-books" element={<BrowseBooksPage />} />
         <Route path="book-details" element={<BookDetails />} />
         <Route path="reset-password" element={<ResetPassword />} />
+        <Route path="confirm-password" element={<ConfirmPassword />} />
 
         <Route path="user/:userType" element={<AuthPage />} />
       </Route>

@@ -62,7 +62,7 @@ class AuthController extends Controller
             );
 
             // Send mail using our MailService
-            $resetLink = url("/reset-password?token=$token&email=" . urlencode($user->email));
+            $resetLink = config('app.url')."/confirm-password?token=$token&userType=$role&email=" . urlencode($user->email);
             $mailData = [
                 'name' => $user->name,
                 'resetLink' => $resetLink,
@@ -91,7 +91,70 @@ class AuthController extends Controller
             ], 500);
         }
     }
+    // add db transaction
+    public function confirmPassword(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $request->validate([
+                'email' => 'required|email',
+                'userType' => 'required|in:admin,reader,volunteer',
+                'token' => 'required|string',
+                'password' => 'required|string|min:8|confirmed',
+            ]);
 
+            $record = DB::table('password_reset_tokens')
+                ->where('email', $request->email)
+                ->where('token', $request->token)
+                ->first();
+
+            if (!$record) {
+                return response()->json(['message' => 'Invalid token or email.'], 400);
+            }
+
+            $role  = $request->userType;
+            $userModel = null;
+            switch ($role) {
+                case 'admin':
+                    $userModel = Admin::class;
+                    break;
+                case 'reader':
+                    $userModel = Reader::class;
+                    break;
+                case 'volunteer':
+                    $userModel = Volunteer::class;
+                    break;
+            }
+
+            $user = $userModel::where('email', $request->email)->first();
+            if (!$user) {
+                return response()->json(['message' => 'User not found.'], 404);
+            }
+
+            $user->password = Hash::make($request->password);
+            $user->save();
+
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            DB::commit();
+            return response()->json(['message' => 'Password has been reset successfully.']);
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error during password confirmation', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+            return response()->json([
+                'message' => 'An error occurred while resetting password.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 
     /**
      * Register a new Admin user.
