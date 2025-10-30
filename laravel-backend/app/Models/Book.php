@@ -30,6 +30,12 @@ class Book extends Model
 
     ];
 
+    public function getRouteKeyName()
+    {
+        return 'book_id';
+    }
+
+
     /**
      * The attributes that should be cast.
      *
