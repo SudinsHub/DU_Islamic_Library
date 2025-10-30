@@ -98,7 +98,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('vol/deleteVolunteer', [VolunteerController::class, 'deleteVolunteer']);
 
         Route::apiResource('readers', ReaderController::class);
-        Route::apiResource('admin-book', AdminBookController::class);
+        Route::apiResource('admin-book', AdminBookController::class)->parameters(['admin-book' => 'book']);
         Route::get('admin-book/{book}/collections', [AdminBookController::class, 'getBookCollections']);
         Route::put('admin-book/{book}/collections', [AdminBookController::class, 'manageBookCollections']);
     
