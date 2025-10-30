@@ -28,11 +28,7 @@ function ResetPassword() {
   const handleSubmit = async (e) => {
     try {
          e.preventDefault();
-        if (password !== confirmPassword) {
-        alert('Passwords do not match!');
-        return;
-        }
-        const response = await axios.post(`${baseURL}/api/confirm-password`, { email, userType, token, password });  
+        const response = await axios.post(`${baseURL}/api/confirm-password`, { email, userType, token, password, password_confirmation: confirmPassword });  
         toast.success(response.data.message || 'Password has been reset successfully.');
         navigate('/user/' + userType);
     } catch (error) {
