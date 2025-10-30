@@ -115,6 +115,9 @@ const BookFormDialog = ({
       const baseUrl = import.meta.env.VITE_API_URL || '';
       if (book) {
         // Update book
+
+        console.log(`URL: ${baseUrl}/api/admin-book/${book.book_id}, PUT, Bearer ${token}, Payload:`, payload);
+
         await axios.put(`${baseUrl}/api/admin-book/${book.book_id}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -124,6 +127,9 @@ const BookFormDialog = ({
         toast.success("Book updated successfully!");
       } else {
         // Add new book
+
+        console.log(`URL: ${baseUrl}/api/admin-book, POST, Bearer ${token}, Payload:`, payload);
+
         await axios.post(`${baseUrl}/api/admin-book`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -523,6 +529,7 @@ const AdminBookManagementPage = () => {
       };
 
       const baseUrl = import.meta.env.VITE_API_URL || '';
+
       const response = await axios.get(`${baseUrl}/api/admin-book`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -588,6 +595,10 @@ const AdminBookManagementPage = () => {
     try {
       if (!token) throw new Error("Authentication token missing.");
       const baseUrl = import.meta.env.VITE_API_URL || '';
+
+      console.log(`URL: ${baseUrl}/api/admin-book/${bookId}, DELETE, Bearer ${token}`);
+      
+
       await axios.delete(`${baseUrl}/api/admin-book/${bookId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,

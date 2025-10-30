@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
-
+// put, post, delete, (post kora baki ase)
 class AdminBookController extends Controller
 {
     /**
@@ -128,6 +128,7 @@ class AdminBookController extends Controller
      */
     public function destroy(Book $book)
     {
+        Log::debug("Book model found by route model binding:", $book->toArray());
         try {
             $book->book_collection()->delete();
             $book->delete();
