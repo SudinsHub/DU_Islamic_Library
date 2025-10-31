@@ -62,7 +62,7 @@ class AdminBookController extends Controller
             $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'image' => 'nullable|image|max:4096',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
                 'author' => 'required', // Can be ID or name
                 'publisher' => 'required', // Can be ID or name
                 'category' => 'required', // Can be ID or name
@@ -111,7 +111,7 @@ class AdminBookController extends Controller
             $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'image' => 'nullable|image|max:4096',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
                 'author' => 'required',
                 'publisher' => 'required',
                 'category' => 'required',
