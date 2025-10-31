@@ -416,7 +416,7 @@ const BrowseBooksPage = () => {
 
                   {/* Categories Filter */}
                   <div className="mb-4 border-b pb-4 border-gray-200">
-                    <h4 className="text-base font-medium mb-2 text-gray-700">Tags (Category)</h4>
+                    <h4 className="text-base font-medium mb-2 text-gray-700">Category</h4>
                     <input
                       type="text"
                       placeholder="Search categories..."
@@ -582,7 +582,6 @@ const BrowseBooksPage = () => {
                   ratingCount={book.ratingCount}
                   isLoved={book.isLoved}
                   availableStatus={book.availableStatus}
-                  tags={book.tags}
                   imageUrl={book.imageUrl}
                 />
               ))}

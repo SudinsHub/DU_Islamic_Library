@@ -11,8 +11,9 @@ use App\Models\Hall;
 use App\Models\BookCollection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+
 // put, post, delete, (post kora baki ase)
 class AdminBookController extends Controller
 {
@@ -57,29 +58,40 @@ class AdminBookController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image_url' => 'nullable|url|max:2048',
-            'author' => 'required', // Can be ID or name
-            'publisher' => 'required', // Can be ID or name
-            'category' => 'required', // Can be ID or name
-        ]);
+        try{
+            $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'image' => 'nullable|image|max:4096',
+                'author' => 'required', // Can be ID or name
+                'publisher' => 'required', // Can be ID or name
+                'category' => 'required', // Can be ID or name
+            ]);
 
-        $authorId = $this->resolveEntityId(Author::class, $request->input('author'));
-        $publisherId = $this->resolveEntityId(Publisher::class, $request->input('publisher'));
-        $categoryId = $this->resolveEntityId(Category::class, $request->input('category'));
+            $authorId = $this->resolveEntityId(Author::class, $request->input('author'));
+            $publisherId = $this->resolveEntityId(Publisher::class, $request->input('publisher'));
+            $categoryId = $this->resolveEntityId(Category::class, $request->input('category'));
+            if ($request->hasFile('image')) {
+                $imageFile = $request->file('image');
+                // Store the image in 'storage/app/public/books' directory
+                $path = $imageFile->store('books', 'public');
+                // Get the public URL for the stored image to save in DB
+                $imageUrl = Storage::url($path);
+            }
+            $book = Book::create([
+                'title' => $request->input('title'),
+                'description' => $request->input('description'),
+                'image_url' => $imageUrl ?? null,
+                'author_id' => $authorId,
+                'publisher_id' => $publisherId,
+                'category_id' => $categoryId,
+            ]);
 
-        $book = Book::create([
-            'title' => $request->input('title'),
-            'description' => $request->input('description'),
-            'image_url' => $request->input('image_url'),
-            'author_id' => $authorId,
-            'publisher_id' => $publisherId,
-            'category_id' => $categoryId,
-        ]);
-
-        return response()->json($book->load(['author', 'publisher', 'category']), 201);
+            return response()->json($book->load(['author', 'publisher', 'category']), 201);
+        } catch (\Exception $e) {
+            Log::error("Failed to create book: " . $e->getMessage());
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -95,32 +107,47 @@ class AdminBookController extends Controller
      */
     public function update(Request $request, Book $book)
     {
-        Log::debug("Incoming request for book update:", $request->all());
-        Log::debug("Book model found by route model binding:", $book->toArray());
+        try {
+            $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'image' => 'nullable|image|max:4096',
+                'author' => 'required',
+                'publisher' => 'required',
+                'category' => 'required',
+            ]);
 
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image_url' => 'nullable|url|max:2048',
-            'author' => 'required',
-            'publisher' => 'required',
-            'category' => 'required',
-        ]);
+            $authorId = $this->resolveEntityId(Author::class, $request->input('author'));
+            $publisherId = $this->resolveEntityId(Publisher::class, $request->input('publisher'));
+            $categoryId = $this->resolveEntityId(Category::class, $request->input('category'));
 
-        $authorId = $this->resolveEntityId(Author::class, $request->input('author'));
-        $publisherId = $this->resolveEntityId(Publisher::class, $request->input('publisher'));
-        $categoryId = $this->resolveEntityId(Category::class, $request->input('category'));
+            if ($request->hasFile('image')) {
+                $imageFile = $request->file('image');
+                // Store the image in 'storage/app/public/books' directory
+                // 'store' method returns the path relative to the disk's root (e.g., 'books/unique-filename.jpg')
+                Storage::delete($book->image_url); // delete old image
+                $path = $imageFile->store('books', 'public');
+                // Get the public URL for the stored image to save in DB
+                $imageUrl = Storage::url($path);
+            }
 
-        $book->update([
-            'title' => $request->input('title'),
-            'description' => $request->input('description'),
-            'image_url' => $request->input('image_url'),
-            'author_id' => $authorId,
-            'publisher_id' => $publisherId,
-            'category_id' => $categoryId,
-        ]);
+            $book->update([
+                'title' => $request->input('title'),
+                'description' => $request->input('description'),
+                'author_id' => $authorId,
+                'publisher_id' => $publisherId,
+                'category_id' => $categoryId,
+            ]);
 
-        return response()->json($book->load(['author', 'publisher', 'category']));
+            if (isset($imageUrl)) {
+                $book->image_url = $imageUrl;
+                $book->save();
+            }
+            return response()->json($book->load(['author', 'publisher', 'category']));
+        } catch (\Exception $e) {
+            Log::error("Failed to update book: " . $e->getMessage());
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -128,9 +155,10 @@ class AdminBookController extends Controller
      */
     public function destroy(Book $book)
     {
-        Log::debug("Book model found by route model binding:", $book->toArray());
         try {
             $book->book_collection()->delete();
+            // delete image from storage
+            Storage::delete($book->image_url);
             $book->delete();
             return response()->json(['message' => "successfully deleted"], 204);
         } catch (\Exception $e) {

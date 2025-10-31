@@ -51,7 +51,7 @@ class AuthController extends Controller
 
             $user = $userModel::where('email', $request->email)->first();
             if (!$user) {
-                return response()->json(['message' => 'Email not found'], 404);
+                return response()->json(['message' => 'User with this email not found'], 404);
             }
 
             // Generate token and store

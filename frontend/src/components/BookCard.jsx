@@ -11,7 +11,6 @@ const LibraryBookCard = ({
   availableStatus = true,
   rating = 0,
   ratingCount = 0,
-  tags = [],
 }) => {
   const navigate = useNavigate();
   const baseURL = import.meta.env.VITE_API_URL ;
@@ -21,11 +20,6 @@ const LibraryBookCard = ({
   return (
     <div onClick={handleClick} className="max-w-sm rounded-xl bg-white p-4 shadow-lg  cursor-pointer">
       <div className="flex justify-between items-start mb-2">
-        {tags.length > 0 && (
-          <div className={`bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium`}>
-            {tags[0]}
-          </div>
-        )}
         <button className="text-2xl">
           {isLoved ? (
             <span className="text-green-400">♥</span>

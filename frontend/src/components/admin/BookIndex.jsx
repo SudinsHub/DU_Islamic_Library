@@ -50,7 +50,7 @@ const BookFormDialog = ({
     defaultValues: {
       title: book?.title || '',
       description: book?.description || '',
-      image_url: book?.image_url || '',
+      image: null,
       // For existing book, set the ID. For new, or if selecting 'new', it will be the typed string.
       author: book?.author?.author_id || '',
       publisher: book?.publisher?.publisher_id || '',
@@ -69,7 +69,7 @@ const BookFormDialog = ({
       form.reset({
         title: book.title,
         description: book.description,
-        image_url: book.image_url,
+        image: null,
         author: book.author?.author_id || '', // Set ID for existing
         publisher: book.publisher?.publisher_id || '',
         category: book.category?.category_id || '',
@@ -82,7 +82,7 @@ const BookFormDialog = ({
       form.reset({
         title: '',
         description: '',
-        image_url: '',
+        image: null,
         author: '',
         publisher: '',
         category: '',
@@ -104,7 +104,7 @@ const BookFormDialog = ({
       const payload = {
         title: values.title,
         description: values.description,
-        image_url: values.image_url,
+        image: values.image,
         // The backend handles whether 'author', 'publisher', 'category' is an ID or a new name.
         // So, we just send the value from the form field (which is updated by both select and input).
         author: values.author,
@@ -193,13 +193,26 @@ const BookFormDialog = ({
             />
             <FormField
               control={form.control}
-              name="image_url"
+              name="image"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image URL</FormLabel>
+                  <FormLabel>Upload Image</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        // inform react-hook-form manually
+                        field.onChange(file);
+                      }}
+                    />
                   </FormControl>
+                  {field.value && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Selected file: {field.value.name}
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
