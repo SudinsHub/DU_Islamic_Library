@@ -308,14 +308,21 @@ function RegistrationForm({ userType }) {
             <label htmlFor="session" className="block text-sm font-medium text-gray-700 mb-1">
               Session
             </label>
-            <input
+            <select
               type="text"
               id="session"
               placeholder="Select session"
               value={session}
               onChange={(e) => setSession(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-200 ease-in-out text-gray-800 placeholder-gray-400"
-            />
+              required
+            >
+              <option value="">Select session</option>
+              {Array.from({ length: 10 }, (_, i) => {
+                const year = new Date().getFullYear() - i;
+                return (<option key={year} value={`${year}-${year + 1}`}>{year}-{year + 1}</option>);
+              })}
+            </select>
           </div>
           <div>
             <label htmlFor="hall_id" className="block text-sm font-medium text-gray-700 mb-1">
@@ -329,7 +336,7 @@ function RegistrationForm({ userType }) {
               required
             >
               <option value="">Select attached hall</option>
-              {halls.map((hall) => (
+              {halls.filter(hall => hall.gender === gender).map((hall) => (
                 <option key={hall.hall_id} value={hall.hall_id}>
                   {hall.name}
                 </option>

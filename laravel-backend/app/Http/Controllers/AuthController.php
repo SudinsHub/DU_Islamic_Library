@@ -51,7 +51,8 @@ class AuthController extends Controller
 
             $user = $userModel::where('email', $request->email)->first();
             if (!$user) {
-                return response()->json(['message' => 'User with this email not found'], 404);
+                return response()->json(['message' => 'User with this e
+                mail not found'], 404);
             }
 
             // Generate token and store
@@ -217,13 +218,13 @@ class AuthController extends Controller
         try {
             $request->validate([
                 'name' => 'required|string|max:255',
-                'registration_no' => 'nullable|string|max:255',
+                'registration_no' => 'required|numeric|digits:10',
                 'session' => 'nullable|string|max:255',
                 'email' => 'required|string|email|max:255|unique:readers,email',
-                'contact' => 'nullable|string|max:255',
+                'contact' => 'required|string|max:255',
                 'hall_id' => 'required|uuid|exists:halls,hall_id',
                 'dept_id' => 'required|uuid|exists:departments,dept_id',
-                'gender' => 'nullable|in:male,female',
+                'gender' => 'required|in:male,female',
                 'password' => 'required|string|min:8|confirmed',
             ]);
 
@@ -265,7 +266,7 @@ class AuthController extends Controller
                 'request' => $request->all(),
             ]);
             return response()->json([
-                'message' => 'Validation Error',
+                'message' => $e->getMessage(),
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
