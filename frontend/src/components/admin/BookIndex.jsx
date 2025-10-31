@@ -121,7 +121,7 @@ const BookFormDialog = ({
         await axios.put(`${baseUrl}/api/admin-book/${book.book_id}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            // 'Content-Type': 'application/json',
           },
         });
         toast.success("Book updated successfully!");
@@ -133,7 +133,7 @@ const BookFormDialog = ({
         await axios.post(`${baseUrl}/api/admin-book`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            // 'Content-Type': 'application/json',
           },
         });
         toast.success("Book added successfully!");
