@@ -383,7 +383,7 @@ class BookController extends Controller
                 'hall_name' => $collection->hall->name,
                 'available_copies_in_hall' => $collection->available_copies,
             ];
-        });
+        })->values();
 
         // Construct the final response object with all requested details
         $response = [
