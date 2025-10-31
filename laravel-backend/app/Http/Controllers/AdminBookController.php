@@ -125,7 +125,9 @@ class AdminBookController extends Controller
                 $imageFile = $request->file('image');
                 // Store the image in 'storage/app/public/books' directory
                 // 'store' method returns the path relative to the disk's root (e.g., 'books/unique-filename.jpg')
-                Storage::delete($book->image_url); // delete old image
+                if ($book->image_url) {
+                    Storage::delete($book->image_url); // delete old image
+                }
                 $path = $imageFile->store('books', 'public');
                 // Get the public URL for the stored image to save in DB
                 $imageUrl = Storage::url($path);
@@ -158,7 +160,9 @@ class AdminBookController extends Controller
         try {
             $book->book_collection()->delete();
             // delete image from storage
-            Storage::delete($book->image_url);
+            if ($book->image_url) {
+                Storage::delete($book->image_url);
+            }
             $book->delete();
             return response()->json(['message' => "successfully deleted"], 204);
         } catch (\Exception $e) {
