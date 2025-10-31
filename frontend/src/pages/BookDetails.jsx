@@ -156,7 +156,7 @@ const BookDetails = () => {
                     author: book.author,
                     coverImage: book.imageURL
                 }}
-                collectionPoints={book.halls.map(hall => ({
+                collectionPoints={book.halls && book.halls.map(hall => ({
                     id: hall.hall_id,
                     name: hall.hall_name,
                     available: hall.available_copies_in_hall
@@ -215,7 +215,7 @@ const BookDetails = () => {
                                 <img
                                     src={baseURL + book.imageURL || "/api/placeholder/280/380"}
                                     alt={book.title}
-                                    className="w-full object-cover aspect-[3/4]"
+                                    className="w-full object-cover aspect-[3/4] max-h-7xl"
                                 />
                             </div>
                         </div>
@@ -302,7 +302,7 @@ const BookDetails = () => {
                                     <span className="font-semibold text-lg">Available in Halls</span>
                                 </div>
                                 <div className="flex flex-wrap gap-2 md:justify-end">
-                                    {book.halls.map((hall) => (
+                                    {book.halls && book.halls.map((hall) => (
                                         <div key={hall.hall_id} className="text-right bg-gray-200 rounded-xl px-3 py-1">
                                             <div className="font-semibold">{hall.hall_name}</div>
                                         </div>
@@ -314,7 +314,7 @@ const BookDetails = () => {
                         {/* Description */}
                         <div className="mt-4">
                             <h2 className="font-semibold text-lg mb-2">Description</h2>
-                            <p className="text-gray-700">{book.description} <span className="text-blue-600 font-medium">see more</span></p>
+                            <p className="text-gray-700">{book.description}</p>
                         </div>
 
 

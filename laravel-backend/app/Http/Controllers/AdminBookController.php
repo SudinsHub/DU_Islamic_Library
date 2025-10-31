@@ -189,43 +189,48 @@ class AdminBookController extends Controller
      */
     public function manageBookCollections(Request $request, Book $book)
     {
-        $request->validate([
-            'book_collection' => 'required|array',
-            'book_collection.*.hall_id' => 'required|uuid|exists:halls,hall_id',
-            'book_collection.*.available_copies' => 'required|integer|min:0',
-            'book_collection.*.total_copies' => 'required|integer|min:0|gte:book_collection.*.available_copies',
-            'book_collection.*.collection_id' => 'nullable|uuid|exists:book_book_collection,collection_id',
-        ]);
+        try{
+            $request->validate([
+                'book_collection' => 'required|array',
+                'book_collection.*.hall_id' => 'required|uuid|exists:halls,hall_id',
+                'book_collection.*.available_copies' => 'required|integer|min:0',
+                'book_collection.*.total_copies' => 'required|integer|min:0|gte:book_collection.*.available_copies',
+                'book_collection.*.collection_id' => 'nullable|uuid|exists:book_collections,collection_id',
+            ]);
 
-        $existingCollectionIds = $book->book_collection->pluck('collection_id')->toArray();
-        $updatedCollectionIds = [];
+            $existingCollectionIds = $book->book_collection->pluck('collection_id')->toArray();
+            $updatedCollectionIds = [];
 
-        foreach ($request->input('book_collection') as $collectionData) {
-            if (isset($collectionData['collection_id']) && in_array($collectionData['collection_id'], $existingCollectionIds)) {
-                // Update existing collection
-                $collection = BookCollection::find($collectionData['collection_id']);
-                $collection->update([
-                    'available_copies' => $collectionData['available_copies'],
-                    'total_copies' => $collectionData['total_copies'],
-                ]);
-                $updatedCollectionIds[] = $collection->collection_id;
-            } else {
-                // Create new collection
-                $collection = BookCollection::create([
-                    'book_id' => $book->book_id,
-                    'hall_id' => $collectionData['hall_id'],
-                    'available_copies' => $collectionData['available_copies'],
-                    'total_copies' => $collectionData['total_copies'],
-                ]);
-                $updatedCollectionIds[] = $collection->collection_id;
+            foreach ($request->input('book_collection') as $collectionData) {
+                if (isset($collectionData['collection_id']) && in_array($collectionData['collection_id'], $existingCollectionIds)) {
+                    // Update existing collection
+                    $collection = BookCollection::find($collectionData['collection_id']);
+                    $collection->update([
+                        'available_copies' => $collectionData['available_copies'],
+                        'total_copies' => $collectionData['total_copies'],
+                    ]);
+                    $updatedCollectionIds[] = $collection->collection_id;
+                } else {
+                    // Create new collection
+                    $collection = BookCollection::create([
+                        'book_id' => $book->book_id,
+                        'hall_id' => $collectionData['hall_id'],
+                        'available_copies' => $collectionData['available_copies'],
+                        'total_copies' => $collectionData['total_copies'],
+                    ]);
+                    $updatedCollectionIds[] = $collection->collection_id;
+                }
             }
+
+            // Delete book_collection that were not present in the update request
+            $book_collectionToDelete = array_diff($existingCollectionIds, $updatedCollectionIds);
+            BookCollection::whereIn('collection_id', $book_collectionToDelete)->delete();
+
+            return response()->json($book->book_collection()->with('hall')->get());
+        } catch (\Exception $e) {
+            Log::error("Failed to manage book collections: " . $e->getMessage());
+            return response()->json(['message' => $e->getMessage()], 500);
         }
-
-        // Delete book_collection that were not present in the update request
-        $book_collectionToDelete = array_diff($existingCollectionIds, $updatedCollectionIds);
-        BookCollection::whereIn('collection_id', $book_collectionToDelete)->delete();
-
-        return response()->json($book->book_collection()->with('hall')->get());
     }
 
     /**
