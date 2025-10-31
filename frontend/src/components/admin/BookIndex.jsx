@@ -94,65 +94,58 @@ const BookFormDialog = ({
     }
   }, [book, form, isOpen]);
 
-  const onSubmit = async (values) => {
-    try {
-      if (!token) {
-        toast.error("Authentication token is missing.");
-        return;
-      }
-
-      const payload = {
-        title: values.title,
-        description: values.description,
-        image: values.image,
-        // The backend handles whether 'author', 'publisher', 'category' is an ID or a new name.
-        // So, we just send the value from the form field (which is updated by both select and input).
-        author: values.author,
-        publisher: values.publisher,
-        category: values.category,
-      };
-
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      if (book) {
-        // Update book
-
-        console.log(`URL: ${baseUrl}/api/admin-book/${book.book_id}, PUT, Bearer ${token}, Payload:`, payload);
-
-        await axios.put(`${baseUrl}/api/admin-book/${book.book_id}`, payload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            // 'Content-Type': 'application/json',
-          },
-        });
-        toast.success("Book updated successfully!");
-      } else {
-        // Add new book
-
-        console.log(`URL: ${baseUrl}/api/admin-book, POST, Bearer ${token}, Payload:`, payload);
-
-        await axios.post(`${baseUrl}/api/admin-book`, payload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            // 'Content-Type': 'application/json',
-          },
-        });
-        toast.success("Book added successfully!");
-      }
-      onSuccess();
-      onOpenChange(false);
-    } catch (error) {
-      console.error("Book form submission error:", error);
-      // Check for validation errors from Laravel backend
-      if (axios.isAxiosError(error) && error.response && error.response.data && error.response.data.errors) {
-        const errors = error.response.data.errors;
-        Object.keys(errors).forEach(key => {
-          toast.error(`${key}: ${errors[key][0]}`);
-        });
-      } else {
-        toast.error(error.message || "Failed to save book.");
-      }
+const onSubmit = async (values) => {
+  try {
+    if (!token) {
+      toast.error("Authentication token is missing.");
+      return;
     }
-  };
+
+    const formData = new FormData();
+    formData.append('title', values.title);
+    formData.append('description', values.description || '');
+    if (values.image) {
+      formData.append('image', values.image);
+    }
+    formData.append('author', values.author);
+    formData.append('publisher', values.publisher);
+    formData.append('category', values.category);
+
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+
+    if (book) {
+      await axios.post(`${baseUrl}/api/admin-book/${book.book_id}?_method=PUT`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      toast.success("Book updated successfully!");
+    } else {
+      await axios.post(`${baseUrl}/api/admin-book`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      toast.success("Book added successfully!");
+    }
+
+    onSuccess();
+    onOpenChange(false);
+  } catch (error) {
+    console.error("Book form submission error:", error);
+    if (axios.isAxiosError(error) && error.response?.data?.errors) {
+      const errors = error.response.data.errors;
+      Object.keys(errors).forEach(key => {
+        toast.error(`${key}: ${errors[key][0]}`);
+      });
+    } else {
+      toast.error(error.message || "Failed to save book.");
+    }
+  }
+};
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
