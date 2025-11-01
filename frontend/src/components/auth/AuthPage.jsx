@@ -110,29 +110,32 @@ function AuthPage() {
                     )}
 
                     {/* Switch between Login and Register */}
-                    <div className="mt-6 text-center text-gray-600 text-sm">
-                        {isLoginMode || !(selectedUserType==='admin') ? (
-                            <>
-                                Don't have an account?{' '}
-                                <button
-                                    onClick={() => setIsLoginMode(false)}
-                                    className="text-green-600 font-semibold hover:underline transition-colors duration-200"
-                                >
-                                    Register
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                Already have an account?{' '}
-                                <button
-                                    onClick={() => setIsLoginMode(true)}
-                                    className="text-blue-600 font-semibold hover:underline transition-colors duration-200"
-                                >
-                                    Login
-                                </button>
-                            </>
-                        )}
-                    </div>
+                    {(!(selectedUserType==='admin')) && (
+
+                        <div className="mt-6 text-center text-gray-600 text-sm">
+                            {isLoginMode ? (
+                                <>
+                                    Don't have an account?{' '}
+                                    <button
+                                        onClick={() => setIsLoginMode(false)}
+                                        className="text-green-600 font-semibold hover:underline transition-colors duration-200"
+                                        >
+                                        Register
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    Already have an account?{' '}
+                                    <button
+                                        onClick={() => setIsLoginMode(true)}
+                                        className="text-blue-600 font-semibold hover:underline transition-colors duration-200"
+                                        >
+                                        Login
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
