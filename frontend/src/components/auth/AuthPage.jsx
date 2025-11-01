@@ -111,7 +111,7 @@ function AuthPage() {
 
                     {/* Switch between Login and Register */}
                     <div className="mt-6 text-center text-gray-600 text-sm">
-                        {isLoginMode ? (
+                        {isLoginMode || !(selectedUserType==='admin') ? (
                             <>
                                 Don't have an account?{' '}
                                 <button

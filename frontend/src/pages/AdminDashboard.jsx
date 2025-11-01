@@ -9,6 +9,8 @@ import AdminReadersPage from "@/components/admin/AdminReadersPage";
 import VolunteersPage from "@/components/admin/AdminVolunteersPage";
 import BookIndex from '@/components/admin/BookIndex';
 import EntityManagement from '@/components/admin/EntityManagement';
+import RegistrationForm
+ from '@/components/auth/RegistrationForm';
 const AdminDashboard = () => {
     // State to manage which section is currently active
     const [activeSection, setActiveSection] = useState('VerifyVolunteers'); // Default active section
@@ -147,6 +149,18 @@ const AdminDashboard = () => {
                                 Entity Management
                             </button>
                         </li>
+                        <li>
+                            <button
+                                onClick={() => setActiveSection('AdminManagement')}
+                                className={`py-3 px-4 rounded-t-lg transition-colors duration-200 ${
+                                    activeSection === 'AdminManagement'
+                                        ? 'bg-gray-50 text-gray-900 border-b-2 border-green-500'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                                }`}
+                            >
+                                Admin Management
+                            </button>
+                        </li>
                         {/* Add other admin navigation items here if needed */}
                     </ul>
                 </nav>
@@ -162,6 +176,7 @@ const AdminDashboard = () => {
                     {activeSection === 'VolunteersPage' && <VolunteersPage/>}
                     {activeSection === 'BookIndex' && <BookIndex/>}
                     {activeSection === 'EntityManagement' && <EntityManagement/>}
+                    {activeSection === 'AdminManagement' && <RegistrationForm userType='admin'/>}
                 </div>
             </div>
         </div>

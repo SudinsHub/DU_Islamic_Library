@@ -231,7 +231,7 @@ const BookDetails = () => {
                             <button
                                 onClick={handleRequestBookButton}
                                 className={`bg-[#0CCE6B] text-white py-3 px-4 rounded-md flex-1 font-medium ${(!book.availability) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                disabled={!book.availability || !isAuthenticated}
+                                disabled={!book.availability}
                             >
                                 {!isAuthenticated ? "Login First" : (book.availability ? 'Request Book' : 'Not Available')}
                             </button>
