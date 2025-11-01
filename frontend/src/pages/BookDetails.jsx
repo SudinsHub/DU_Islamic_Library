@@ -6,7 +6,7 @@ import SuccessModal from "@/components/SuccessModal";
 import { apiCall } from '../utils/ApiCall';
 import { toast } from 'react-toastify';
 import { useAuth } from "@/contexts/AuthContext";
-
+import { useNavigate } from 'react-router-dom'
 // Shadcn UI components for the new confirmation modal
 import {
     AlertDialog,
@@ -21,7 +21,7 @@ import {
 
 const BookDetails = () => {
     const baseURL = import.meta.env.VITE_API_URL;
-    const { isAuthenticated, token } = useAuth();
+    const { isAuthenticated, token} = useAuth();
     const { search } = useLocation();
     const params = new URLSearchParams(search);
     const id = params.get("id");
@@ -29,14 +29,13 @@ const BookDetails = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isLoved, setIsLoved] = useState(false);
-
+    const navigator = useNavigate();
     // Modals states
     const [isRequestModalOpen, setRequestModalOpen] = useState(false);
     const [isSuccessModalOpen, setSuccessModalOpen] = useState(false);
     const [isConfirmRequestOpen, setConfirmRequestOpen] = useState(false); // New state for confirmation modal
     const [selectedCollectionPoint, setSelectedCollectionPoint] = useState(null); // To store selected hall ID for confirmation
 
-    const [volunteersList, setVolunteersList] = useState([]);
 
     // Handle request confirmation from the BookRequestModal
     const handleInitiateRequest = (collectionPointId) => {
@@ -51,14 +50,12 @@ const BookDetails = () => {
 
         try {
             await apiCall(`/api/request`, { book_id: book.id, hall_id: selectedCollectionPoint }, 'POST', token);
-            const availableVols = await apiCall(`/api/vol/get-available-vols?hall_id=${selectedCollectionPoint}`, {}, 'GET', token);
             toast.success("Request confirmed successfully!");
-            setVolunteersList(availableVols);
             setConfirmRequestOpen(false); // Close confirmation modal
             setSuccessModalOpen(true); // Open success modal
         } catch (error) {
             console.error("Error confirming request:", error);
-            toast.error(error.message || "Failed to confirm request");
+            toast.error(error.response.data.message || "Failed to confirm request");
         } finally {
             setSelectedCollectionPoint(null); // Clear selected point
         }
@@ -66,8 +63,8 @@ const BookDetails = () => {
 
     // Go to dashboard action
     const handleGoToDashboard = () => {
-        console.log("Navigating to dashboard");
         setSuccessModalOpen(false);
+        navigator('/dashboard');
     };
 
     const handleLoved = async () => {
@@ -159,6 +156,7 @@ const BookDetails = () => {
                 collectionPoints={book.halls && book.halls.map(hall => ({
                     id: hall.hall_id,
                     name: hall.hall_name,
+                    gender: hall.hall_gender,
                     available: hall.available_copies_in_hall
                 })) || []}
             />
@@ -188,9 +186,7 @@ const BookDetails = () => {
                 isOpen={isSuccessModalOpen}
                 onClose={() => setSuccessModalOpen(false)}
                 onGoToDashboard={handleGoToDashboard}
-                onCallVolunteer={(contact) => { console.log("Calling:", contact); }}
                 requestInfo={{ bookTitle: book.title, bookAuthor: book.author }}
-                volunteers={volunteersList}
             />
 
             <div className="bg-gray-50 min-h-screen pb-8">

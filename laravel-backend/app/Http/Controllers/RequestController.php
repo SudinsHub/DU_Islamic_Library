@@ -7,16 +7,23 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Requests\CancelRequestRequest;
+use App\Models\Volunteer; 
 use App\Http\Requests\UpdateRequestRequest;
-use App\Http\Requests\FulfillRequestRequest;
+use Illuminate\Validation\ValidationException;
 use App\Models\BookCollection; // To update book counts
 use App\Models\Request as LibraryRequest; // Alias to avoid conflict
 use Symfony\Component\HttpFoundation\Response; // For HTTP status codes
 use App\Models\Lending;        // To create a new lending record upon fulfillment
+use App\Services\MailService; // Mail service for notifications
 
 class RequestController extends Controller
 {
+    protected $mailService;
+
+    public function __construct(MailService $mailService)
+    {
+        $this->mailService = $mailService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -97,58 +104,57 @@ class RequestController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        // 1. Authorization Check (Manual)
-        // Ensure the user is authenticated.
-        if ($request->user() === null) {
-            return response()->json([
-                'message' => 'Unauthenticated. Please log in to make a request.'
-            ], Response::HTTP_UNAUTHORIZED); // 401 Unauthorized
-        }
 
-        // Get the reader_id from the authenticated user.
-        // This assumes your authenticated user object has a 'reader_id' property.
-        // Adjust this if your User model links to Reader model differently.
-        if($request->user()->reader_id) $authenticatedReaderId = $request->user()->reader_id ?? null;
-        else $authenticatedReaderId = null;
-        if (!$authenticatedReaderId) {
-            return response()->json([
-                'message' => 'Your user account is not associated with a valid profile.'
-            ], Response::HTTP_FORBIDDEN); // 403 Forbidden
-        }
-
-        // 2. Manual Validation
-        // Validate the incoming request data.
-        // reader_id is derived from the authenticated user, so it's not validated from the request body.
-        $validatedData = $request->validate([
-            'book_id' => ['required', 'uuid', 'exists:books,book_id'],
-            'hall_id' => ['required', 'uuid', 'exists:halls,hall_id'],
-            // 'request_date' and 'status' are not expected from the request body
-            // as they are set internally or by database defaults.
-        ]);
-
-        // Merge authenticated reader_id and default values for non-fillable fields.
-        // Ensure 'request_date' and 'status' are either fillable in your model
-        // or have database default values, otherwise they will be ignored by create().
-        $dataToCreate = array_merge($validatedData, [
-            'reader_id' => $authenticatedReaderId,
-            // 'request_date' => now()->toDateString(), // Set default request date
-            // 'status' => 'pending',                   // Set default status
-        ]);
-
-        // 3. Check book availability in the requested hall
-        $bookCollection = BookCollection::where('book_id', $dataToCreate['book_id'])
-                                       ->where('hall_id', $dataToCreate['hall_id'])
-                                       ->first();
-
-        if (!$bookCollection || $bookCollection->available_copies <= 0) {
-            return response()->json([
-                'message' => 'Book not available in the specified hall or no copies left.'
-            ], Response::HTTP_BAD_REQUEST); // 400 Bad Request
-        }
-
-        // 4. Database Transaction
-        DB::beginTransaction();
         try {
+            // 1. Authorization Check (Manual)
+            // Ensure the user is authenticated.
+            if ($request->user() === null) {
+                return response()->json([
+                    'message' => 'Unauthenticated. Please log in to make a request.'
+                ], Response::HTTP_UNAUTHORIZED); // 401 Unauthorized
+            }
+
+            // Get the reader_id from the authenticated user.
+            // This assumes your authenticated user object has a 'reader_id' property.
+            if($request->user()->reader_id) $authenticatedReaderId = $request->user()->reader_id ?? null;
+            else $authenticatedReaderId = null;
+            if (!$authenticatedReaderId) {
+                return response()->json([
+                    'message' => 'Authenticated user is not a recognized reader.'
+                ], Response::HTTP_FORBIDDEN); // 403 Forbidden
+            }
+
+            // 2. Manual Validation
+            // Validate the incoming request data.
+            // reader_id is derived from the authenticated user, so it's not validated from the request body.
+            $validatedData = $request->validate([
+                'book_id' => ['required', 'uuid', 'exists:books,book_id'],
+                'hall_id' => ['required', 'uuid', 'exists:halls,hall_id'],
+            ]);
+
+            // Merge authenticated reader_id and default values for non-fillable fields.
+            // Ensure 'request_date' and 'status' are either fillable in your model
+            // or have database default values, otherwise they will be ignored by create().
+            $dataToCreate = array_merge($validatedData, [
+                'reader_id' => $authenticatedReaderId,
+                // 'request_date' => now()->toDateString(), // Set default request date
+                // 'status' => 'pending',                   // Set default status
+            ]);
+
+            // 3. Check book availability in the requested hall
+            $bookCollection = BookCollection::where('book_id', $dataToCreate['book_id'])
+                                        ->where('hall_id', $dataToCreate['hall_id'])
+                                        ->first();
+            $book = \App\Models\Book::find($dataToCreate['book_id']);
+
+            if (!$bookCollection || $bookCollection->available_copies <= 0) {
+                return response()->json([
+                    'message' => 'Book not available in the specified hall or no copies left.'
+                ], Response::HTTP_BAD_REQUEST); // 400 Bad Request
+            }
+
+            // 4. Database Transaction
+            DB::beginTransaction();
             // Decrement available copies as a request is made.
             // This ensures the count reflects reserved books.
             // $bookCollection->decrement('available_copies');
@@ -156,6 +162,30 @@ class RequestController extends Controller
             // Create the library request record.
             $libraryRequest = LibraryRequest::create($dataToCreate);
 
+            $hallId = $dataToCreate['hall_id'];
+            $hall = \App\Models\Hall::find($hallId);
+            // fetch volunteers associated with the hall
+            $volunteers = Volunteer::where('hall_id', $hallId)->get();
+
+            $mailData = [
+                'name' => $request->user()->name,
+                'contact' => $request->user()->contact,
+                'email' => $request->user()->email,
+                'book_name' => $book->title,
+                'book_author' => $book->author,
+                'hall' => $hall->name,
+            ];
+            // Notify volunteers about the new request
+            foreach ($volunteers as $volunteer) {
+                // send mail
+                $this->mailService->sendMail(
+                    $volunteer->email,
+                    'New Book Request',
+                    'emails.book-request',
+                    $mailData
+                );
+
+            }
             DB::commit(); // Commit the transaction if all operations succeed
 
             return response()->json([
@@ -163,15 +193,28 @@ class RequestController extends Controller
                 'data' => $libraryRequest
             ], Response::HTTP_CREATED); // 201 Created status
 
-        } catch (\Exception $e) {
+        } 
+        catch (ValidationException $ve) {
+            // Extract the first error message from the errors array
+            $errors = $ve->errors();
+            $firstErrorMessage = collect($errors)->flatten()->first(); // e.g., "The hall_id field is required."
+            DB::rollBack(); // Rollback the transaction if validation fails
+            Log::warning('Validation failed while creating request', [
+                'errors' => $errors,
+                'data' => $dataToCreate
+            ]);
+            return response()->json([
+                'message' => $firstErrorMessage ?? $ve->getMessage(), // always a clean string
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        catch (\Exception $e) {
             DB::rollBack(); // Rollback the transaction if any error occurs
             Log::error('Failed to create request or update book availability', [
                 'error' => $e->getMessage(),
                 'data' => $dataToCreate
             ]);
             return response()->json([
-                'message' => 'Failed to create request or update book availability.',
-                'error' => $e->getMessage()
+                'message' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR); // 500 Internal Server Error status
         }
     }

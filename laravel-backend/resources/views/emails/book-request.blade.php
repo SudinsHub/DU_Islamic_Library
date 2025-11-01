@@ -1,12 +1,24 @@
 <!DOCTYPE html>
 <html>
 <body>
-    <h3>Hello {{ $name }},</h3>
-    <p>A new request has arrived at {{$hall}} Hall Islamic Library</p>
-    <p>Click the link below to set a new password:</p>
-    <a href="{{ $resetLink }}">Reset Password</a>
-    <p>If you didn’t request this, please ignore the message.</p>
+    <h3>Assalamu Alaikum, </h3>
+    <h4>Dear Volunteer,</h4>
+    <p>A new request has arrived at {{$hall}} Islamic Library</p>
+    <p>Book Info:</p>
+    <ul>
+        <li>Title: {{ $book_name }}</li>
+        <li>Author: {{ $book_author }}</li>
+    </ul>
+    <p>Requester Info:</p>
+    <ul>
+        <li>Name: {{ $name }}</li>
+        <li>Contact: {{ $contact }}</li>
+        <li>Email: {{ $email }}</li>
+    </ul>
+    <p>Please reach out to the requester to coordinate the book collection and update the <a href="{{ config('app.url') }}/user/volunteer">website</a> accordingly.</p>
     <br>
-    <p>– The {{ config('app.name') }} Team</p>
+    <p>If it's already on the 'fulfilled' state, please ignore this message.</p>
+    <br>
+    <p>– Team {{ config('app.name') }}</p>
 </body>
 </html>

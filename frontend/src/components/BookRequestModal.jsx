@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { buttonGreen } from "@/utils/colors";
-
+import { useAuth } from "@/contexts/AuthContext";
 /**
  * Modal for requesting a book with collection point selection
  * 
@@ -23,6 +23,7 @@ const BookRequestModal = ({
   collectionPoints 
 }) => {
   const [selectedPoint, setSelectedPoint] = useState(collectionPoints?.[0]?.id || null);
+  const {user} = useAuth();
 
   if (!isOpen) return null;
 
@@ -69,7 +70,7 @@ const BookRequestModal = ({
                   key={point.id}
                   className={`flex items-center p-3 rounded-md cursor-pointer ${
                     selectedPoint === point.id ? 'bg-green-50' : 'hover:bg-gray-50'
-                  }`}
+                  } ${(point.gender === user.gender) ? '' : 'opacity-50 cursor-not-allowed'}`}
                 >
                   <div className="flex items-center h-5">
                     <input

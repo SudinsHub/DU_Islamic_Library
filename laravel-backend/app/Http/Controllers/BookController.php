@@ -381,6 +381,7 @@ class BookController extends Controller
             return [
                 'hall_id' => $collection->hall->hall_id, // Assuming hall_id is primary key
                 'hall_name' => $collection->hall->name,
+                'hall_gender' => $collection->hall->gender,
                 'available_copies_in_hall' => $collection->available_copies,
             ];
         })->values();
