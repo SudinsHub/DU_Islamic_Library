@@ -21,6 +21,8 @@ class Request extends Model
         // 'request_date',
         // 'status',
     ];
+    // timestamp disabled
+    public $timestamps = false;
 
     protected $casts = [
         'request_date' => 'date',
