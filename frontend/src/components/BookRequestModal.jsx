@@ -70,7 +70,7 @@ const BookRequestModal = ({
                   key={point.id}
                   className={`flex items-center p-3 rounded-md cursor-pointer ${
                     selectedPoint === point.id ? 'bg-green-50' : 'hover:bg-gray-50'
-                  } ${(point.gender === user.gender) ? '' : 'opacity-50 cursor-not-allowed disabled'}`}
+                  } ${(point.gender === user.gender) ? '' : 'opacity-50'}`}
                 >
                   <div className="flex items-center h-5">
                     <input
@@ -80,6 +80,7 @@ const BookRequestModal = ({
                       checked={selectedPoint === point.id}
                       onChange={() => setSelectedPoint(point.id)}
                       className="w-4 h-4 text-green-500 border-gray-300 focus:ring-green-500"
+                      disabled = {!(point.gender === user.gender)}
                     />
                   </div>
                   <div className="ml-3 text-sm">
