@@ -6,7 +6,11 @@ import { useState } from "react";
 
 const Sidebar = ({initialCollapsed = false}) => {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
+  const menuItems = [{ icon: Home, label: "Dashboard", href: "/dashboard" }, { icon: Crown, label: "Leaderboard", href: "/leaderboard" },
+     { icon: BookOpen, label: "My reads", href: "/my-reads" }, 
+    { icon: Heart, label: "Wishlist", href: "/wishlist" 
 
+  }]
   return (
     <div
       className={`bg-white h-screen shadow-md flex flex-col transition-all md duration-300${
@@ -28,7 +32,7 @@ const Sidebar = ({initialCollapsed = false}) => {
       {/* Menu Items */}
       <nav className="flex-1 px-4 pt-4">
         <ul className="space-y-6">
-          {[{ icon: Home, label: "Dashboard", href: "/dashboard" }, { icon: Crown, label: "Leaderboard", href: "/leaderboard" }, { icon: BookOpen, label: "My reads", href: "/my-reads" }, { icon: Heart, label: "Wishlist", href: "/wishlist" }].map((item, index) => (
+          {menuItems.map((item, index) => (
             <li key={index}>
               <Link to={item.href}
                 className="flex items-center text-gray-700 hover:text-gray-900"

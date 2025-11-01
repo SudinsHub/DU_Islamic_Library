@@ -70,7 +70,7 @@ const BookRequestModal = ({
                   key={point.id}
                   className={`flex items-center p-3 rounded-md cursor-pointer ${
                     selectedPoint === point.id ? 'bg-green-50' : 'hover:bg-gray-50'
-                  } ${(point.gender === user.gender) ? '' : 'opacity-50 cursor-not-allowed'}`}
+                  } ${(point.gender === user.gender) ? '' : 'opacity-50 cursor-not-allowed disabled'}`}
                 >
                   <div className="flex items-center h-5">
                     <input
