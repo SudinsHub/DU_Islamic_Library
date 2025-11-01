@@ -64,8 +64,16 @@ const BookDetails = () => {
     // Go to dashboard action
     const handleGoToDashboard = () => {
         setSuccessModalOpen(false);
-        navigator('/dashboard');
+        navigator('/browse-books');
     };
+
+    const handleRequestBookButton = () => {
+        if(!isAuthenticated){
+            navigator('/user/reader');
+            return;
+        } 
+        setRequestModalOpen(true);
+    }
 
     const handleLoved = async () => {
         // Optimistically update UI
@@ -221,8 +229,8 @@ const BookDetails = () => {
                         </div>
                         <div className={`mt-6 flex gap-4 `}>
                             <button
-                                onClick={() => setRequestModalOpen(true)}
-                                className={`bg-[#0CCE6B] text-white py-3 px-4 rounded-md flex-1 font-medium ${(!book.availability || !isAuthenticated) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={handleRequestBookButton}
+                                className={`bg-[#0CCE6B] text-white py-3 px-4 rounded-md flex-1 font-medium ${(!book.availability) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 disabled={!book.availability || !isAuthenticated}
                             >
                                 {!isAuthenticated ? "Login First" : (book.availability ? 'Request Book' : 'Not Available')}

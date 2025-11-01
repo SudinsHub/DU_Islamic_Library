@@ -13,7 +13,8 @@ use Illuminate\Validation\ValidationException;
 use App\Models\BookCollection; // To update book counts
 use App\Models\Request as LibraryRequest; // Alias to avoid conflict
 use Symfony\Component\HttpFoundation\Response; // For HTTP status codes
-use App\Models\Lending;        // To create a new lending record upon fulfillment
+use App\Models\Lending;  
+use App\Models\Hall;
 use App\Services\MailService; // Mail service for notifications
 
 class RequestController extends Controller
@@ -163,7 +164,7 @@ class RequestController extends Controller
             $libraryRequest = LibraryRequest::create($dataToCreate);
 
             $hallId = $dataToCreate['hall_id'];
-            $hall = \App\Models\Hall::find($hallId);
+            $hall = Hall::find($hallId);
             // fetch volunteers associated with the hall
             $volunteers = Volunteer::where('hall_id', $hallId)->get();
 
@@ -172,7 +173,7 @@ class RequestController extends Controller
                 'contact' => $request->user()->contact,
                 'email' => $request->user()->email,
                 'book_name' => $book->title,
-                'book_author' => $book->author,
+                'book_author' => $book->author->name,
                 'hall' => $hall->name,
             ];
             // Notify volunteers about the new request

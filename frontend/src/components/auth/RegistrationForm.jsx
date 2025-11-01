@@ -127,6 +127,7 @@ function RegistrationForm({ userType }) {
           value={contact}
           onChange={(e) => setContact(e.target.value)}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-200 ease-in-out text-gray-800 placeholder-gray-400"
+          required
         />
       </div>
       <div>
@@ -220,6 +221,7 @@ function RegistrationForm({ userType }) {
               value={contact}
               onChange={(e) => setContact(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-200 ease-in-out text-gray-800 placeholder-gray-400"
+              required
             />
           </div>
           <div>
@@ -231,13 +233,14 @@ function RegistrationForm({ userType }) {
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-200 ease-in-out text-gray-800"
+                required
               >
                 <option value="">Select your gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
           </div>
-          
+
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Create password
@@ -301,6 +304,7 @@ function RegistrationForm({ userType }) {
               value={registrationNo}
               onChange={(e) => setRegistrationNo(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-200 ease-in-out text-gray-800 placeholder-gray-400"
+              required
             />
           </div>
           <div>

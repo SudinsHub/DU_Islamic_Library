@@ -17,7 +17,7 @@
     </ul>
     <p>Please reach out to the requester to coordinate the book collection and update the <a href="{{ config('app.url') }}/user/volunteer">website</a> accordingly.</p>
     <br>
-    <p>If it's already on the 'fulfilled' state, please ignore this message.</p>
+    <p>If you don't find the request on 'Pending Requests' section, another volunteer has already processed it, ignore in that case.</p>
     <br>
     <p>– Team {{ config('app.name') }}</p>
 </body>
