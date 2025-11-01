@@ -222,8 +222,7 @@ function RegistrationForm({ userType }) {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-200 ease-in-out text-gray-800 placeholder-gray-400"
             />
           </div>
-          {userType === 'reader' && (
-            <div>
+          <div>
               <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
                 Gender
               </label>
@@ -237,8 +236,8 @@ function RegistrationForm({ userType }) {
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
-            </div>
-          )}
+          </div>
+          
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Create password
