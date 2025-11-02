@@ -13,7 +13,7 @@ const Navbar = () => {
     const [showUserInfoCard, setShowUserInfoCard] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const { isAuthenticated, user, userType, logout, token } = useAuth();
+    const { isAuthenticated, user, userType, logout, token, isLoading } = useAuth();
     const navigate = useNavigate();
     const [isDataChanged, setIsDataChanged] = useState(false);
 
@@ -297,86 +297,88 @@ const Navbar = () => {
                     </div>
                 )}
             </div>
-            <AlertDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Manage Your Profile</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            <div className="space-y-4">
+            {!isLoading && user && (
+                <AlertDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Manage Your Profile</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                                        <input
+                                            name='name'
+                                            type="text"
+                                            value={form.name || user.name || ''}
+                                            onChange={handleFormChange}
+                                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
+                                        />
+                                    </div>
+                                </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                                    <label className="block text-sm font-medium text-gray-700">Email</label>
                                     <input
-                                        name='name'
-                                        type="text"
-                                        value={form.name || user.name || ''}
+                                        type="email"
+                                        name='email'
+                                        value={form.email || user.email || ''}
                                         onChange={handleFormChange}
                                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
                                     />
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Email</label>
-                                <input
-                                    type="email"
-                                    name='email'
-                                    value={form.email || user.email || ''}
-                                    onChange={handleFormChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Contact</label>
-                                <input
-                                    type="text"
-                                    name='contact'
-                                    value={form.contact || user.contact || ''}
-                                    onChange={handleFormChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
-                                />
-                            </div>
-                            {!(userType === 'admin') && (<div>
-                                <label className="block text-sm font-medium text-gray-700">Address</label>
-                                <input
-                                    type="text"
-                                    name='address'
-                                    value={form.address || user.address || ''}
-                                    onChange={handleFormChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
-                                />
-                            </div>)}
-                            {(userType === 'volunteer') &&(<div>
-                                <label className="block text-sm font-medium text-gray-700">Room No</label>
-                                <input
-                                    type="text"
-                                    name='room_no'
-                                    value={form.room_no || user.room_no || ''}
-                                    onChange={handleFormChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
-                                />
-                            </div>)}
-                            {(userType !== 'admin' && user.registration_no) && (<div>
-                                <label className="block text-sm font-medium text-gray-700">Registration No.</label>
-                                <p className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm">
-                                {user.registration_no}
-                                </p>
-                            </div>)}
-                            {(userType !== 'admin' && user.session) && (<div>
-                                <label className="block text-sm font-medium text-gray-700">Session</label>
-                                <p className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm">
-                                {user.session}
-                                </p>
-                            </div>)}
-                            
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleSaveChanges} disabled={!isDataChanged}>
-                            Save Changes
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Contact</label>
+                                    <input
+                                        type="text"
+                                        name='contact'
+                                        value={form.contact || user.contact || ''}
+                                        onChange={handleFormChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
+                                    />
+                                </div>
+                                {!(userType === 'admin') && (<div>
+                                    <label className="block text-sm font-medium text-gray-700">Address</label>
+                                    <input
+                                        type="text"
+                                        name='address'
+                                        value={form.address || user.address || ''}
+                                        onChange={handleFormChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
+                                    />
+                                </div>)}
+                                {(userType === 'volunteer') &&(<div>
+                                    <label className="block text-sm font-medium text-gray-700">Room No</label>
+                                    <input
+                                        type="text"
+                                        name='room_no'
+                                        value={form.room_no || user.room_no || ''}
+                                        onChange={handleFormChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
+                                    />
+                                </div>)}
+                                {(userType !== 'admin' && user.registration_no) && (<div>
+                                    <label className="block text-sm font-medium text-gray-700">Registration No.</label>
+                                    <p className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm">
+                                    {user.registration_no}
+                                    </p>
+                                </div>)}
+                                {(userType !== 'admin' && user.session) && (<div>
+                                    <label className="block text-sm font-medium text-gray-700">Session</label>
+                                    <p className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm">
+                                    {user.session}
+                                    </p>
+                                </div>)}
+                                
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleSaveChanges} disabled={!isDataChanged}>
+                                Save Changes
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </>
     );
 };
