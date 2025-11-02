@@ -54,9 +54,8 @@ const Navbar = () => {
     const handleSaveChanges = async () => {
         // Implement save changes logic here
         try {
-            console.log(user);
-            
-            await axios.put( `${baseUrl}/api/user`, {...form, userType, id: user.id}, {
+            const id = `${userType}_id`;
+            await axios.put( `${baseUrl}/api/user`, {...form, userType, id}, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
