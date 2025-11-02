@@ -165,21 +165,3 @@ Route::apiResource('halls', HallController::class);
 
 Route::apiResource('reading-histories', ReadingHistoryController::class);
 
-Route::get('/run-migrations', function () {
-    
-    try {
-        // Artisan::call('migrate', ['--force' => true]);
-        // This will drop all tables and run all migrations fresh
-        Artisan::call('migrate:fresh', ['--force' => true]);
-        $output = Artisan::output();
-        return response()->json([
-            'status' => 'success',
-            'output' => $output
-        ]);
-    } catch (Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage()
-        ]);
-    }
-});

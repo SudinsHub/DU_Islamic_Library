@@ -261,7 +261,7 @@ const EntityManagement = ({ entityType, apiEndpoint, columns }) => {
                       ))}
                       <TableCell className="space-x-2">
                         <Button variant="outline" size="sm" onClick={() => handleEditClick(entity)}>Edit</Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(entity[entityType + '_id'])}>Delete</Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(entity[entityType === 'department' ? 'dept_id' : entityType + '_id'])}>Delete</Button>
                       </TableCell>
                     </TableRow>
                   ))
