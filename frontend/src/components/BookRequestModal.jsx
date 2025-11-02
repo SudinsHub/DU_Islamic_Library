@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { buttonGreen } from "@/utils/colors";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,14 +22,18 @@ const BookRequestModal = ({
   book, 
   collectionPoints 
 }) => {
-  const [selectedPoint, setSelectedPoint] = useState(collectionPoints?.[0]?.id || null);
+  const [selectedPoint, setSelectedPoint] = useState( null);
   const {user} = useAuth();
+  useEffect(() => {
+    setSelectedPoint(null);
+  }, []);
 
   if (!isOpen) return null;
 
   const handleConfirm = () => {
     onConfirm(selectedPoint);
   };
+
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

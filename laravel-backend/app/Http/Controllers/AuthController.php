@@ -140,9 +140,13 @@ class AuthController extends Controller
             return response()->json(['message' => 'Password has been reset successfully.']);
         } catch (ValidationException $e) {
             DB::rollBack();
+            $errors = $e->errors();
+            $firstErrorMessage = collect($errors)->flatten()->first(); 
+            Log::warning('Validation failed while creating request', [
+                'errors' => $errors,
+            ]);
             return response()->json([
-                'message' => $e->getMessage(),
-                'errors' => $e->errors(),
+                'message' => $firstErrorMessage ?? $e->getMessage()
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -156,6 +160,68 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    // update user via put request
+    public function updateUser(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'id' => 'required|uuid',
+                'userType' => 'required|in:admin,reader,volunteer',
+                'name' => 'sometimes|nullable|string|max:255',
+                'email' => 'sometimes|nullable|string|email',
+                'contact' => 'sometimes|nullable|string|max:18',
+                'address' => 'sometimes|nullable|string|max:255',
+                'room_no' => 'sometimes|nullable|string|max:5',
+            ]);
+            $id = $request->input('id');
+            $user = null;
+            $userType = $request->input('userType');
+
+            switch ($userType) {
+                case 'admin':
+                    $user = Admin::findOrFail($id);
+                    $allowed = ['name', 'email', 'contact'];
+                    break;
+                case 'reader':
+                    $user = Reader::findOrFail($id);
+                    $allowed = ['name', 'email', 'contact', 'address'];
+                    break;
+                case 'volunteer':
+                    $user = Volunteer::findOrFail($id);
+                    $allowed = ['name', 'email', 'contact', 'address', 'room_no'];
+                    break;
+                default:
+                    return response()->json(['message' => 'Invalid user type.'], 400);
+            }
+
+            $user->fill($request->only($allowed));
+            $user->save();
+
+            return response()->json(['message' => ucfirst($userType).' updated successfully.']);
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            $errors = $e->errors();
+            $firstErrorMessage = collect($errors)->flatten()->first(); 
+            Log::warning('Validation failed while creating request', [
+                'errors' => $errors,
+            ]);
+            return response()->json([
+                'message' => $firstErrorMessage ?? $e->getMessage()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error during user update', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+            return response()->json([
+                'message' => 'An error occurred while updating user.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 
     /**
      * Register a new Admin user.

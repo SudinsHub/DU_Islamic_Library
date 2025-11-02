@@ -79,7 +79,6 @@ const MyReadsPage = () => {
                 fetchMyReads(); // Refresh the list
             } catch (err) {
                 console.error("Failed to cancel request:", err);
-                toast.error("Failed to cancel request. Please try again.");
             }
         }
     };

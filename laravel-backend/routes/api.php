@@ -90,6 +90,7 @@ Route::post('/confirm-password', [AuthController::class, 'confirmPassword']);
 Route::middleware('auth:sanctum')->group(function () {
     // Get currently authenticated user details
     Route::get('/user', [AuthController::class, 'user']);
+    Route::put('/user', [AuthController::class, 'updateUser']);
     // Admin specific routes
     Route::middleware(AdminMiddleware::class)->group(function () {
         // Add more admin-specific routes here
@@ -109,6 +110,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::patch('request/fulfill', [RequestController::class, 'fulfill']);
     Route::patch('request/cancel', [RequestController::class, 'cancel']);
+    Route::delete('request', [RequestController::class, 'destroy']);
     Route::apiResource('request', RequestController::class);
     
     // Logout the authenticated user by revoking their current token

@@ -519,15 +519,16 @@ const InsertBookForm = () => {
 
                 {/* Image Upload */}
                 <div>
-                    <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-                        Book Cover Image (Optional)
+                    <label htmlFor="image" className="flex block text-sm font-medium text-gray-700 mb-1">
+                        Book Cover Image
+                        <span className="text-gray-500 text-xs">Max 2MB, upload image only if it is a new book for the system.</span>
                     </label>
                     <Input
                         type="file"
                         name="image"
                         id="image"
                         onChange={handleImageChange}
-                        accept="image/*" // Restrict to image files
+                        accept="image/*" 
                         className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
                     />
                     {formData.image && (
