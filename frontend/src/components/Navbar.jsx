@@ -55,6 +55,12 @@ const Navbar = () => {
         // Implement save changes logic here
         try {
             const id = (userType === 'reader') ? user.reader_id : (userType === 'volunteer') ? user.volunteer_id : user.admin_id;
+            if(!form.name && user.name) form.name = user.name;
+            if(!form.email && user.email) form.email = user.email;
+            if(!form.contact && user.contact) form.contact = user.contact;
+            if(!form.address && user.address) form.address = user.address;
+            if(!form.room_no && user.room_no) form.room_no = user.room_no;
+
             await axios.put( `${baseUrl}/api/user`, {...form, userType, id}, {
                 headers: {
                     Authorization: `Bearer ${token}`
