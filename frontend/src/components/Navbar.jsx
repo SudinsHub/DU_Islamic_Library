@@ -5,11 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogFooter,
      AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog'
-import { apiCall } from '@/utils/ApiCall';
+// import { apiCall } from '@/utils/ApiCall';
+import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const Navbar = () => {
     const [searchTerm, setSearchTerm] = useState('');
+    const baseUrl = import.meta.env.VITE_API_URL;
     const [showUserInfoCard, setShowUserInfoCard] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -52,7 +54,11 @@ const Navbar = () => {
     const handleSaveChanges = async () => {
         // Implement save changes logic here
         try {
-            await apiCall( `/user`, {...form, userType, id: user.id}, 'PUT', token);
+            await axios.put( `${baseUrl}/api/user`, {...form, userType, id: user.id}, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
         } catch (error) {
             toast.error(error.response.data.message || 'Failed to update profile. Please try again.');
         }

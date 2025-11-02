@@ -7,7 +7,7 @@ import {useNavigate} from 'react-router-dom'
  * @param {object} { userType } - The type of user ('admin', 'reader', 'volunteer').
  */
 function LoginForm({ userType }) {
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
@@ -22,7 +22,6 @@ function LoginForm({ userType }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">

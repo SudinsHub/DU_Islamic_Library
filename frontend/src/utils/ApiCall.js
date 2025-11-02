@@ -72,5 +72,6 @@ export const apiCall = async (endpoint, data, method = 'POST', token = null) => 
     } catch (err) {
         console.error(`API Error: ${err.message}`, err); // Log the full error object for better debugging
         toast.error(err.response?.data?.message || err.message || 'An error occurred'); // Display a general error toast
+        throw err;
     }
 };

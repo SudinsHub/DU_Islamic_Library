@@ -9,7 +9,7 @@ import { apiCall } from '@/utils/ApiCall';
  * @param {object} { userType } - The type of user ('admin', 'reader', 'volunteer').
  */
 function RegistrationForm({ userType }) {
-  const { register, isLoading, error } = useAuth();
+  const { register, isLoading } = useAuth();
 
   // Common fields for all user types
   const [name, setName] = useState('');
@@ -379,7 +379,7 @@ function RegistrationForm({ userType }) {
         </div>
       )}
 
-      {error && <p className="text-red-500 text-center mt-6">{error}</p>}
+      {/* {error && <p className="text-red-500 text-center mt-6">{error}</p>} */}
 
       <div className="flex justify-between mt-8 space-x-4">
         {currentStep > 1 && userType !== 'admin' && (
