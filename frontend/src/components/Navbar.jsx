@@ -52,7 +52,7 @@ const Navbar = () => {
     const handleSaveChanges = async () => {
         // Implement save changes logic here
         try {
-            await apiCall( `/users`, {...form, userType, id: user.id}, 'PUT', token);
+            await apiCall( `/user`, {...form, userType, id: user.id}, 'PUT', token);
         } catch (error) {
             toast.error(error.response.data.message || 'Failed to update profile. Please try again.');
         }
@@ -305,7 +305,7 @@ const Navbar = () => {
                             <AlertDialogDescription>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-900">Name</label>
+                                        <label className="block text-md font-medium text-gray-900">Name</label>
                                         <input
                                             name='name'
                                             type="text"
@@ -316,7 +316,7 @@ const Navbar = () => {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900">Email</label>
+                                    <label className="block text-md font-medium text-gray-900">Email</label>
                                     <input
                                         type="email"
                                         name='email'
@@ -326,7 +326,7 @@ const Navbar = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900">Contact</label>
+                                    <label className="block text-md font-medium text-gray-900">Contact</label>
                                     <input
                                         type="text"
                                         name='contact'
@@ -336,7 +336,7 @@ const Navbar = () => {
                                     />
                                 </div>
                                 {!(userType === 'admin') && (<div>
-                                    <label className="block text-sm font-medium text-gray-900">Address</label>
+                                    <label className="block text-md font-medium text-gray-900">Address</label>
                                     <input
                                         type="text"
                                         name='address'
@@ -346,7 +346,7 @@ const Navbar = () => {
                                     />
                                 </div>)}
                                 {(userType === 'volunteer') &&(<div>
-                                    <label className="block text-sm font-medium text-gray-900">Room No</label>
+                                    <label className="block text-md font-medium text-gray-900">Room No</label>
                                     <input
                                         type="text"
                                         name='room_no'
@@ -356,13 +356,13 @@ const Navbar = () => {
                                     />
                                 </div>)}
                                 {(userType !== 'admin' && user.registration_no) && (<div>
-                                    <label className="block text-sm font-medium text-gray-900">Registration No.</label>
+                                    <label className="block text-md font-medium text-gray-900">Registration No.</label>
                                     <p className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm">
                                     {user.registration_no}
                                     </p>
                                 </div>)}
                                 {(userType !== 'admin' && user.session) && (<div>
-                                    <label className="block text-sm font-medium text-gray-900">Session</label>
+                                    <label className="block text-md font-medium text-gray-900">Session</label>
                                     <p className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm">
                                     {user.session}
                                     </p>
