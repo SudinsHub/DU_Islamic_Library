@@ -52,7 +52,7 @@ const Navbar = () => {
     const handleSaveChanges = async () => {
         // Implement save changes logic here
         try {
-            await apiCall( `/users`, JSON.stringify({...form, userType, id: user.id}), 'PUT', token);
+            await apiCall( `/users`, {...form, userType, id: user.id}, 'PUT', token);
         } catch (error) {
             toast.error(error.response.data.message || 'Failed to update profile. Please try again.');
         }
@@ -280,7 +280,7 @@ const Navbar = () => {
                                                 setIsEditDialogOpen(true);
                                                 setShowUserInfoCard(false);
                                             }}
-                                            className={`mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-${buttonGreen} text-white font-medium rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 transition-colors text-sm`}
+                                            className={`mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-[${buttonGreen}] text-white font-medium rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 transition-colors text-sm`}
                                         >
                                             <Edit className="h-5 w-5" /> Edit Profile
                                         </button>
@@ -305,65 +305,65 @@ const Navbar = () => {
                             <AlertDialogDescription>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                                        <label className="block text-sm font-medium text-gray-900">Name</label>
                                         <input
                                             name='name'
                                             type="text"
                                             value={form.name || user.name || ''}
                                             onChange={handleFormChange}
-                                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
+                                            className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                                    <label className="block text-sm font-medium text-gray-900">Email</label>
                                     <input
                                         type="email"
                                         name='email'
                                         value={form.email || user.email || ''}
                                         onChange={handleFormChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
+                                        className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Contact</label>
+                                    <label className="block text-sm font-medium text-gray-900">Contact</label>
                                     <input
                                         type="text"
                                         name='contact'
                                         value={form.contact || user.contact || ''}
                                         onChange={handleFormChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
+                                        className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
                                     />
                                 </div>
                                 {!(userType === 'admin') && (<div>
-                                    <label className="block text-sm font-medium text-gray-700">Address</label>
+                                    <label className="block text-sm font-medium text-gray-900">Address</label>
                                     <input
                                         type="text"
                                         name='address'
                                         value={form.address || user.address || ''}
                                         onChange={handleFormChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
+                                        className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
                                     />
                                 </div>)}
                                 {(userType === 'volunteer') &&(<div>
-                                    <label className="block text-sm font-medium text-gray-700">Room No</label>
+                                    <label className="block text-sm font-medium text-gray-900">Room No</label>
                                     <input
                                         type="text"
                                         name='room_no'
                                         value={form.room_no || user.room_no || ''}
                                         onChange={handleFormChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
+                                        className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
                                     />
                                 </div>)}
                                 {(userType !== 'admin' && user.registration_no) && (<div>
-                                    <label className="block text-sm font-medium text-gray-700">Registration No.</label>
-                                    <p className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm">
+                                    <label className="block text-sm font-medium text-gray-900">Registration No.</label>
+                                    <p className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm">
                                     {user.registration_no}
                                     </p>
                                 </div>)}
                                 {(userType !== 'admin' && user.session) && (<div>
-                                    <label className="block text-sm font-medium text-gray-700">Session</label>
-                                    <p className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm">
+                                    <label className="block text-sm font-medium text-gray-900">Session</label>
+                                    <p className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm">
                                     {user.session}
                                     </p>
                                 </div>)}
