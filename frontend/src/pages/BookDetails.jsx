@@ -29,7 +29,7 @@ const BookDetails = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isLoved, setIsLoved] = useState(false);
-    const navigator = useNavigate();
+    const navigate = useNavigate();
     // Modals states
     const [isRequestModalOpen, setRequestModalOpen] = useState(false);
     const [isSuccessModalOpen, setSuccessModalOpen] = useState(false);
@@ -76,12 +76,12 @@ const BookDetails = () => {
     // Go to dashboard action
     const handleGoToDashboard = () => {
         setSuccessModalOpen(false);
-        navigator('/browse-books');
+        navigate('/browse-books');
     };
 
     const handleRequestBookButton = () => {
         if(!isAuthenticated){
-            navigator('/user/reader');
+            navigate('/user/reader');
             return;
         } 
         setRequestModalOpen(true);

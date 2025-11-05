@@ -208,25 +208,33 @@ const BrowseBooksPage = () => {
     switch (filterType) {
       case 'category':
         setSelectedCategories((prev) =>
-          prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [filterId]
+          prev.includes(filterId)
+            ? prev.filter((id) => id !== filterId)
+            : [...prev, filterId]
         );
         break;
       case 'author':
         setSelectedAuthors((prev) =>
-          prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [filterId]
+          prev.includes(filterId)
+            ? prev.filter((id) => id !== filterId)
+            : [...prev, filterId]
         );
         break;
       case 'hall':
         setSelectedHalls((prev) =>
-          prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [filterId]
+          prev.includes(filterId)
+            ? prev.filter((id) => id !== filterId)
+            : [...prev, filterId]
         );
         break;
       default:
         break;
     }
+
     // Reset to page 1 when filters change
     updateUrlWithPage(1);
   };
+
 
   const handleClearAllFilters = () => {
     setSelectedCategories([]);
@@ -408,35 +416,34 @@ const BrowseBooksPage = () => {
               {showFilterOptions && (
                 <div className="absolute right-0 mt-2 w-72 md:w-80 lg:w-96 bg-white rounded-md shadow-lg z-50 p-4 ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <h3 className="font-semibold text-lg mb-3 text-gray-800">Filter by</h3>
-
-                  {/* Categories Filter */}
-                  <div className="mb-4 border-b pb-4 border-gray-200">
-                    <h4 className="text-base font-medium mb-2 text-gray-700">Category</h4>
+                  {/* Availability (Halls) Filter */}
+                  <div className="mb-4">
+                    <h4 className="text-base font-medium mb-2 text-gray-700">Availability (Halls)</h4>
                     <input
                       type="text"
-                      placeholder="Search categories..."
+                      placeholder="Search halls..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500 mb-2"
-                      value={categorySearchTerm}
-                      onChange={(e) => setCategorySearchTerm(e.target.value)}
+                      value={hallSearchTerm}
+                      onChange={(e) => setHallSearchTerm(e.target.value)}
                     />
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                      {filteredCategories.length > 0 ? (
-                        filteredCategories.map((category) => (
-                          <div key={category.category_id} className="flex items-center">
+                      {filteredHalls.length > 0 ? (
+                        filteredHalls.map((hall) => (
+                          <div key={hall.hall_id} className="flex items-center">
                             <input
                               type="checkbox"
-                              id={`category-${category.category_id}`}
-                              checked={isFilterActive('category', category.category_id)}
-                              onChange={() => handleFilterToggle('category', category.category_id)}
+                              id={`hall-${hall.hall_id}`}
+                              checked={isFilterActive('hall', hall.hall_id)}
+                              onChange={() => handleFilterToggle('hall', hall.hall_id)}
                               className="h-4 w-4 text-green-500 rounded border-gray-300 focus:ring-green-500"
                             />
-                            <label htmlFor={`category-${category.category_id}`} className="ml-2 text-sm text-gray-700">
-                              {category.name}
+                            <label htmlFor={`hall-${hall.hall_id}`} className="ml-2 text-sm text-gray-700">
+                              {hall.name}
                             </label>
                           </div>
                         ))
                       ) : (
-                        <p className="text-sm text-gray-500">No categories found.</p>
+                        <p className="text-sm text-gray-500">No halls found.</p>
                       )}
                     </div>
                   </div>
@@ -472,38 +479,40 @@ const BrowseBooksPage = () => {
                       )}
                     </div>
                   </div>
-
-                  {/* Availability (Halls) Filter */}
-                  <div className="mb-4">
-                    <h4 className="text-base font-medium mb-2 text-gray-700">Availability (Halls)</h4>
+                  
+                  {/* Categories Filter */}
+                  <div className="mb-4 border-b pb-4 border-gray-200">
+                    <h4 className="text-base font-medium mb-2 text-gray-700">Category</h4>
                     <input
                       type="text"
-                      placeholder="Search halls..."
+                      placeholder="Search categories..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500 mb-2"
-                      value={hallSearchTerm}
-                      onChange={(e) => setHallSearchTerm(e.target.value)}
+                      value={categorySearchTerm}
+                      onChange={(e) => setCategorySearchTerm(e.target.value)}
                     />
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                      {filteredHalls.length > 0 ? (
-                        filteredHalls.map((hall) => (
-                          <div key={hall.hall_id} className="flex items-center">
+                      {filteredCategories.length > 0 ? (
+                        filteredCategories.map((category) => (
+                          <div key={category.category_id} className="flex items-center">
                             <input
                               type="checkbox"
-                              id={`hall-${hall.hall_id}`}
-                              checked={isFilterActive('hall', hall.hall_id)}
-                              onChange={() => handleFilterToggle('hall', hall.hall_id)}
+                              id={`category-${category.category_id}`}
+                              checked={isFilterActive('category', category.category_id)}
+                              onChange={() => handleFilterToggle('category', category.category_id)}
                               className="h-4 w-4 text-green-500 rounded border-gray-300 focus:ring-green-500"
                             />
-                            <label htmlFor={`hall-${hall.hall_id}`} className="ml-2 text-sm text-gray-700">
-                              {hall.name}
+                            <label htmlFor={`category-${category.category_id}`} className="ml-2 text-sm text-gray-700">
+                              {category.name}
                             </label>
                           </div>
                         ))
                       ) : (
-                        <p className="text-sm text-gray-500">No halls found.</p>
+                        <p className="text-sm text-gray-500">No categories found.</p>
                       )}
                     </div>
                   </div>
+
+
 
                   <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
                     <button
