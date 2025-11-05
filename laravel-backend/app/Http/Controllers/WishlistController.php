@@ -23,7 +23,7 @@ class WishlistController
                     'wish_id' => $item->wish_id,
                     'book_id' => $item->book_id,
                     'title' => $item->book->title,
-                    'author' => $item->book->author->name,
+                    'author' => $item->book->author ? $item->book->author->name : null,
                     'image_url' => $item->book->image_url,
                 ];
             });

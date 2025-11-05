@@ -113,8 +113,8 @@ const MyWishlistPage = () => {
                                     className="w-16 h-20 object-cover rounded mr-4 flex-shrink-0"
                                 />
                                 <div className="flex-grow flex flex-col justify-center">
-                                    <h3 className="font-medium text-gray-900">{book.title}</h3>
-                                    <p className="text-sm text-gray-600">{book.author}</p>
+                                    <h3 className="font-medium text-gray-900">{book.title || 'Unknown Title'}</h3>
+                                    <p className="text-sm text-gray-600">{book.author || 'Unknown Author'}</p>
                                 </div>
                                 {/* Optional: Add a small arrow or icon to indicate clickable */}
                                 <div className="ml-auto flex items-center">

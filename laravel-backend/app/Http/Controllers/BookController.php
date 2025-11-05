@@ -30,6 +30,7 @@ class BookController extends Controller
     {
         $query = Book::query();
     
+        
         // Eager load necessary relationships for data transformation
         // 'author' and 'category' are for direct properties
         // 'book_collection' is for calculating total available copies
@@ -54,20 +55,20 @@ class BookController extends Controller
         // --- Filtering ---
         // Filter by Hall (book_collections.available_copies > 0 in a specific hall)
         if ($request->has('hall_id') && !empty($request->input('hall_id'))) {
-            $hallId = $request->input('hall_id');
+            $hallId = (array)  $request->input('hall_id'); // array of hall IDs
             $query->whereHas('book_collection', function ($collectionQuery) use ($hallId) {
-                $collectionQuery->where('hall_id', $hallId)->where('available_copies', '>', 0);
+                $collectionQuery->whereIn('hall_id', $hallId)->where('available_copies', '>', 0);
             });
         }
     
         // Filter by Category
         if ($request->has('category_id') && !empty($request->input('category_id'))) {
-            $query->where('category_id', $request->input('category_id'));
+            $query->whereIn('category_id',  (array)  $request->input('category_id'));
         }
     
         // Filter by Author
         if ($request->has('author_id') && !empty($request->input('author_id'))) {
-            $query->where('author_id', $request->input('author_id'));
+            $query->whereIn('author_id',  (array)  $request->input('author_id'));
         }
     
         // --- Sorting ---
@@ -153,7 +154,7 @@ class BookController extends Controller
 
                 // These fields are required ONLY if it's a new book to the system (Case 1)
                 'title' => 'required_if:is_new_book,true|string|max:255',
-                'author_id' => 'nullable|uuid|exists:authors,author_id',
+                'author_id' => 'nullable|uuid|exists:authors,author_id', // it is an array of uuids
                 'hall_id' => 'nullable|uuid|exists:halls,hall_id',
                 'publisher_id' => 'nullable|uuid|exists:publishers,publisher_id',
                 'category_id' => 'nullable|uuid|exists:categories,category_id',

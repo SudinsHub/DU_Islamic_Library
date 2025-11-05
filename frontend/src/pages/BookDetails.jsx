@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, ChevronLeft, Share2, MoreVertical, Star } from "lucide-react";
+import { Heart, ChevronLeft, Share2, Check, Star } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import BookRequestModal from "@/components/BookRequestModal";
 import SuccessModal from "@/components/SuccessModal";
@@ -35,7 +35,19 @@ const BookDetails = () => {
     const [isSuccessModalOpen, setSuccessModalOpen] = useState(false);
     const [isConfirmRequestOpen, setConfirmRequestOpen] = useState(false); // New state for confirmation modal
     const [selectedCollectionPoint, setSelectedCollectionPoint] = useState(null); // To store selected hall ID for confirmation
+    const [showOptions, setShowOptions] = useState(false)
+    const [copied, setCopied] = useState(false)
 
+    const handleCopyLink = async () => {
+        try {
+        await navigator.clipboard.writeText(window.location.href)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+        setShowOptions(false)
+        } catch (err) {
+        console.error("Failed to copy link:", err)
+        }
+    }
 
     // Handle request confirmation from the BookRequestModal
     const handleInitiateRequest = (collectionPointId) => {
@@ -204,10 +216,31 @@ const BookDetails = () => {
                         <ChevronLeft size={20} />
                         <span className="ml-2 font-medium text-lg">Book details</span>
                     </button>
-                    <div className="flex gap-4">
-                        <Share2 size={20} className="text-gray-600" />
-                        <MoreVertical size={20} className="text-gray-600" />
+                <div className="relative inline-block gap-4">
+                <button
+                    onClick={() => setShowOptions((prev) => !prev)}
+                    className="p-2 rounded-full hover:bg-gray-100"
+                >
+                    <Share2 size={20} className="text-gray-600" />
+                </button>
+
+                {showOptions && (
+                    <div className="absolute right-0 mt-2 w-28 bg-white border border-gray-200 rounded-md shadow-md z-10">
+                    <button
+                        onClick={handleCopyLink}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                    >
+                        {copied ? (
+                        <span className="flex items-center gap-2">
+                            <Check size={14} /> Copied!
+                        </span>
+                        ) : (
+                        "Copy link"
+                        )}
+                    </button>
                     </div>
+                )}
+                </div>
                 </div>
 
                 {/* Book Information */}
