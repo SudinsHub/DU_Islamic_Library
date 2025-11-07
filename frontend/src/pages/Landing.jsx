@@ -30,10 +30,10 @@ export default function Home() {
       <BackgroundBeams/>
 
         {/* Gradient Orbs */}
-        <div className="absolute inset-0 overflow-hidden">
+        {/* <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-20 bg-[#0CCE6B] blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full opacity-20 bg-[#0CCE6B] blur-3xl"></div>
-        </div>
+        </div> */}
 
         {/* 🌸 ABOUT SECTION */}
         <section className="w-full py-12 px-6 bg-gray-50">
