@@ -27,7 +27,6 @@ const AppRoutes = () => {
 
         <Route path="user/:userType" element={<AuthPage />} />
       </Route>
-
     </Routes>
   );
 };

@@ -9,12 +9,12 @@ class DepartmentController
 {
     public function index(Request $request)
     {
-        $departments = Department::all();
+        $departments = Department::all()->orderBy('name', 'asc')->get();
         return response()->json($departments);
     }
     public function indexPaginated(Request $request)
     {
-        $departments = Department::paginate(15);
+        $departments = Department::orderBy('name', 'asc')->paginate(15);
         return response()->json($departments);
     }
     public function show($id)

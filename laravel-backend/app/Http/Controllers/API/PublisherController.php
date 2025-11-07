@@ -22,14 +22,14 @@ class PublisherController
             ]);
         }
         // Otherwise, return all publishers
-        $publishers = Publisher::all();
+        $publishers = Publisher::all()->orderBy('name', 'asc')->get();
         return response()->json($publishers);
     }
 
     public function indexPaginated()
     {
         // Fetch all publishers with pagination
-        $publishers = Publisher::paginate(15);
+        $publishers = Publisher::orderBy('name', 'asc')->paginate(15);
         return response()->json($publishers);
     }
 

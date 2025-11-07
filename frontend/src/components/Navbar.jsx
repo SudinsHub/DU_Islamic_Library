@@ -4,7 +4,7 @@ import { buttonGreen } from '../utils/colors'; // Assuming this path is correct
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogFooter,
-     AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog'
+    AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog'
 // import { apiCall } from '@/utils/ApiCall';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -38,17 +38,23 @@ const Navbar = () => {
             [e.target.name]: e.target.value,
         });
 
-        if (
-            (user.name && form.name !== user.name) ||
-            (user.email && form.email !== user.email) ||
-            (user.contact && form.contact !== user.contact) ||
-            (user.address && form.address !== user.address) ||
-            (user.room_no && form.room_no !== user.room_no)
-        ) {
-            setIsDataChanged(true);
-        } else {
-            setIsDataChanged(false);
-        }
+        // Simplified data changed check for brevity in the component logic
+        // This is a minimal check to enable/disable the save button
+        const isDataDifferent = (field, value) => {
+            // Check if the input value is different from the original user data
+            const originalValue = user[field] || '';
+            const formValue = value || '';
+            return formValue !== originalValue;
+        };
+
+        const changed = 
+            isDataDifferent('name', e.target.name === 'name' ? e.target.value : form.name) ||
+            isDataDifferent('email', e.target.name === 'email' ? e.target.value : form.email) ||
+            isDataDifferent('contact', e.target.name === 'contact' ? e.target.value : form.contact) ||
+            isDataDifferent('address', e.target.name === 'address' ? e.target.value : form.address) ||
+            isDataDifferent('room_no', e.target.name === 'room_no' ? e.target.value : form.room_no);
+
+        setIsDataChanged(changed);
     };
 
     const handleSaveChanges = async () => {
@@ -85,6 +91,19 @@ const Navbar = () => {
     };
 
 
+    useEffect(() => {
+        // Populate form state when the dialog is opened
+        if (isEditDialogOpen && user) {
+            setForm({
+                name: user.name || "",
+                email: user.email || "",
+                contact: user.contact || "",
+                address: user.address || "",
+                room_no: user.room_no || "",
+            });
+            setIsDataChanged(false); // Reset change detection on dialog open
+        }
+    }, [isEditDialogOpen, user]); // Dependency on user to ensure it's available
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -109,16 +128,19 @@ const Navbar = () => {
     const handleSearch = (e) => {
         e.preventDefault();
         navigate(`/browse-books?search=${searchTerm}`);
+        setShowMobileMenu(false); // Close mobile menu after search
     };
 
     const handleBrowseBooks = (e) => {
         e.preventDefault();
         navigate(`/browse-books`);
+        setShowMobileMenu(false); // Close mobile menu after navigation
     };
 
     const handleLoginButton = (e) => {
         e.preventDefault();
         navigate(`/user/reader`);
+        setShowMobileMenu(false); // Close mobile menu after navigation
     };
 
     const handleUserIconClick = () => {
@@ -146,7 +168,7 @@ const Navbar = () => {
                     <div className="flex items-center justify-between gap-4">
                         {/* Left Section: Logo + Search Bar */}
                         <div className="flex items-center flex-grow"> {/* flex-grow here to push search bar */}
-                            <a href="/browse-books" className="flex items-center">
+                            <a href="/" className="flex items-center">
                                 {/* Logo - Controlled size */}
                                 <div className="h-8 w-8 md:h-11 md:w-11 mr-2 flex-shrink-0"> {/* Adjusted size for responsiveness */}
                                     {/* Your SVG Logo */}
@@ -163,7 +185,7 @@ const Navbar = () => {
                                 <span className="font-bold text-xl md:text-2xl text-[#008F5E] hidden md:block mx-4">Dhaka University Islamic Library</span>
                             </a>
                             {/* Search Bar - responsive width and placeholder text size */}
-                            <div className="relative flex-grow md:flex-grow-0 md:w-96"> {/* Increased width on desktop */}
+                            <form className="relative flex-grow md:flex-grow-0 md:w-96" onSubmit={handleSearch}> {/* Increased width on desktop */}
                                 <div className="absolute inset-y-0 left-3 flex items-center">
                                     <Search className="h-5 w-5 text-gray-400" />
                                 </div>
@@ -173,76 +195,22 @@ const Navbar = () => {
                                     className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base" // Responsive text size
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleSearch(e);
-                                        }
-                                    }}
                                 />
-                            </div>
+                            </form>
                         </div>
 
-                        {/* Right Section: Browse Books & Log In */}
+                        {/* Right Section: Browse Books & Log In (Desktop) / Mobile Menu (Mobile) */}
                         <div className="flex items-center gap-4 ml-auto flex-shrink-0">
-                            <a href="/browse-books" className={`text-gray-800 font-medium hover:text-[${buttonGreen}] text-sm md:text-lg`}>Browse books</a> {/* Responsive text size */}
-                            <button
-                                onClick={handleLoginButton}
-                                className={`px-5 py-2 text-white font-medium rounded-lg bg-[${buttonGreen}] hover:opacity-90 transition-opacity text-sm md:text-lg`} 
-                            >
-                                Log In
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    // Logged in navbar
-                    <div className="flex items-center justify-between gap-4">
-                        {/* Left Section: Logo + Search Bar */}
-                        <div className="flex items-center flex-grow"> {/* flex-grow here to push search bar */}
-                            {/* Logo - Controlled size */}
-                            {/* Redirect to browse books page on click */}
-                            <a href="/browse-books" className="flex items-center">
-                                <div className="h-8 w-8 md:h-10 md:w-10 mr-2 flex-shrink-0" > {/* Adjusted size for responsiveness */}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84" fill="none">
-                                        <path d="M37.833 0.333328C37.833 4.9357 34.1021 8.66666 29.4997 8.66666C21.7337 8.66666 15.2083 13.9782 13.3581 21.1667H0.333008V29.5H21.1663V25.3333C21.1663 20.731 24.8973 17 29.4997 17C34.4776 17 38.9457 14.8177 41.9997 11.3576C45.0536 14.8177 49.5218 17 54.4997 17C59.1021 17 62.833 20.731 62.833 25.3333V29.5H75.333V50.3333H83.6664V21.1667H70.6413C68.7911 13.9782 62.2657 8.66666 54.4997 8.66666C49.8973 8.66666 46.1663 4.9357 46.1663 0.333328H37.833Z" fill="#008F5E"/>
-                                        <path d="M29.4997 75.3333C34.1021 75.3333 37.833 79.0643 37.833 83.6667H46.1663C46.1663 79.0643 49.8973 75.3333 54.4997 75.3333H83.6664V67H54.4997C49.5218 67 45.0536 69.1823 41.9997 72.6424C38.9457 69.1823 34.4776 67 29.4997 67L0.333008 67V75.3333H29.4997Z" fill="#008F5E"/>
-                                        <path fillRule="evenodd" clipRule="evenodd" d="M16.1663 33.6667H0.333008V62.8333H16.1663C18.9278 62.8333 21.1663 60.5948 21.1663 57.8333V38.6667C21.1663 35.9052 18.9278 33.6667 16.1663 33.6667ZM8.66634 54.5V42H12.833V54.5H8.66634Z" fill="#008F5E"/>
-                                        <path d="M33.6663 33.6667V54.5H37.833V33.6667H46.1663V57.8333C46.1663 60.5948 43.9278 62.8333 41.1663 62.8333H30.333C27.5716 62.8333 25.333 60.5948 25.333 57.8333V33.6667H33.6663Z" fill="#008F5E"/>
-                                        <path d="M58.6663 62.8333L58.6664 33.6667H50.333V62.8333H58.6663Z" fill="#008F5E"/>
-                                        <path d="M71.1663 33.6667V54.5H83.6664V62.8333H67.833C65.0716 62.8333 62.833 60.5948 62.833 57.8333V33.6667H71.1663Z" fill="#008F5E"/>
-                                    </svg>
-                                </div>
-                                {/* Title - responsive, hidden on small screens */}
-                                <span className="font-bold text-xl md:text-2xl text-[#008F5E] hidden md:block mx-4">Dhaka University Islamic Library</span>
-                            </a>
-                            {/* Search Bar - responsive width and placeholder text size */}
-                            <div className="relative flex-grow md:flex-grow-0 md:w-96"> {/* Increased width on desktop */}
-                                <div className="absolute inset-y-0 left-3 flex items-center">
-                                    <Search className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="Search books..."
-                                    className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base" // Responsive text size
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleSearch(e);
-                                        }
-                                    }}
-                                />
+                            {/* Desktop Links: Browse Books & Log In */}
+                            <div className="hidden md:flex items-center gap-4">
+                                <a href="/browse-books" className={`text-gray-800 font-medium hover:text-[${buttonGreen}] text-sm md:text-lg`}>Browse books</a> {/* Responsive text size */}
+                                <button
+                                    onClick={handleLoginButton}
+                                    className={`px-5 py-2 text-white font-medium rounded-lg bg-[${buttonGreen}] hover:opacity-90 transition-opacity text-sm md:text-lg`}
+                                >
+                                    Log In
+                                </button>
                             </div>
-                        </div>
-
-                        {/* Right Section - Logged in: Browse Books, Mobile Menu, User Icon */}
-                        <div className="flex items-center gap-4 ml-auto flex-shrink-0">
-                            {/* Browse books - always visible */}
-                            <button
-                                className={`px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-[${buttonGreen}] transition-colors text-sm md:text-base`} // Responsive text size
-                                onClick={handleBrowseBooks}
-                            >
-                                Browse books
-                            </button>
 
                             {/* Mobile Menu Button (visible on small screens) */}
                             <div className="relative md:hidden">
@@ -258,26 +226,130 @@ const Navbar = () => {
                                         ref={mobileMenuRef}
                                         className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-2"
                                     >
-                                        {userType === 'reader' && ( // Only show these for 'reader'
-                                            <>
-                                                <a href="/dashboard" className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm">Dashboard</a>
-                                                <a href="/wishlist" className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm">Wishlist</a>
-                                                <a href="/my-reads" className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm">My Reads</a>
-                                                <hr className="my-1 border-gray-200" />
-                                            </>
-                                        )}
+                                        <a 
+                                            href="/browse-books" 
+                                            className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm" 
+                                            onClick={() => setShowMobileMenu(false)}
+                                        >
+                                            Browse books
+                                        </a>
+                                        <a 
+                                            href="/user/reader" 
+                                            className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm" 
+                                            onClick={handleLoginButton}
+                                        >
+                                            Log In
+                                        </a>
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </div>
+                ) : (
+                    // Logged in navbar
+                    <div className="flex items-center justify-between gap-4">
+                        {/* Left Section: Logo + Search Bar */}
+                        <div className="flex items-center flex-grow"> {/* flex-grow here to push search bar */}
+                            {/* Logo - Controlled size */}
+                            {/* Redirect to browse books page on click */}
+                            <a href="/" className="flex items-center">
+                                <div className="h-8 w-8 md:h-10 md:w-10 mr-2 flex-shrink-0" > {/* Adjusted size for responsiveness */}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84" fill="none">
+                                        <path d="M37.833 0.333328C37.833 4.9357 34.1021 8.66666 29.4997 8.66666C21.7337 8.66666 15.2083 13.9782 13.3581 21.1667H0.333008V29.5H21.1663V25.3333C21.1663 20.731 24.8973 17 29.4997 17C34.4776 17 38.9457 14.8177 41.9997 11.3576C45.0536 14.8177 49.5218 17 54.4997 17C59.1021 17 62.833 20.731 62.833 25.3333V29.5H75.333V50.3333H83.6664V21.1667H70.6413C68.7911 13.9782 62.2657 8.66666 54.4997 8.66666C49.8973 8.66666 46.1663 4.9357 46.1663 0.333328H37.833Z" fill="#008F5E"/>
+                                        <path d="M29.4997 75.3333C34.1021 75.3333 37.833 79.0643 37.833 83.6667H46.1663C46.1663 79.0643 49.8973 75.3333 54.4997 75.3333H83.6664V67H54.4997C49.5218 67 45.0536 69.1823 41.9997 72.6424C38.9457 69.1823 34.4776 67 29.4997 67L0.333008 67V75.3333H29.4997Z" fill="#008F5E"/>
+                                        <path fillRule="evenodd" clipRule="evenodd" d="M16.1663 33.6667H0.333008V62.8333H16.1663C18.9278 62.8333 21.1663 60.5948 21.1663 57.8333V38.6667C21.1663 35.9052 18.9278 33.6667 16.1663 33.6667ZM8.66634 54.5V42H12.833V54.5H8.66634Z" fill="#008F5E"/>
+                                        <path d="M33.6663 33.6667V54.5H37.833V33.6667H46.1663V57.8333C46.1663 60.5948 43.9278 62.8333 41.1663 62.8333H30.333C27.5716 62.8333 25.333 60.5948 25.333 57.8333V33.6667H33.6663Z" fill="#008F5E"/>
+                                        <path d="M58.6663 62.8333L58.6664 33.6667H50.333V62.8333H58.6663Z" fill="#008F5E"/>
+                                        <path d="M71.1663 33.6667V54.5H83.6664V62.8333H67.833C65.0716 62.8333 62.833 60.5948 62.833 57.8333V33.6667H71.1663Z" fill="#008F5E"/>
+                                    </svg>
+                                </div>
+                                {/* Title - responsive, hidden on small screens */}
+                                <span className="font-bold text-xl md:text-2xl text-[#008F5E] hidden md:block mx-4">Dhaka University Islamic Library</span>
+                            </a>
+                            {/* Search Bar - responsive width and placeholder text size */}
+                            <form className="relative flex-grow md:flex-grow-0 md:w-96" onSubmit={handleSearch}> {/* Increased width on desktop */}
+                                <div className="absolute inset-y-0 left-3 flex items-center">
+                                    <Search className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Search books..."
+                                    className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base" // Responsive text size
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </form>
+                        </div>
 
+                        {/* Right Section - Logged in: Browse Books, Mobile Menu, User Icon */}
+                        <div className="flex items-center gap-4 ml-auto flex-shrink-0">
+                            
                             {/* Desktop Links (visible on md screens and up) */}
                             <div className="hidden md:flex items-center gap-4">
+                                {/* Browse books - Desktop */}
+                                <button
+                                    className={`px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-[${buttonGreen}] transition-colors text-sm md:text-base`} // Responsive text size
+                                    onClick={handleBrowseBooks}
+                                >
+                                    Browse books
+                                </button>
                                 {userType === 'reader' && ( // Only show these for 'reader'
                                     <>
                                         <a href="/dashboard" className={`text-gray-800 font-medium hover:text-[${buttonGreen}] text-sm md:text-base`}>Dashboard</a> {/* Responsive text size */}
                                         <a href="/wishlist" className={`text-gray-800 font-medium hover:text-[${buttonGreen}] text-sm md:text-base`}>Wishlist</a> {/* Responsive text size */}
                                         <a href="/my-reads" className={`text-gray-800 font-medium hover:text-[${buttonGreen}] text-sm md:text-base`}>My Reads</a> {/* Responsive text size */}
                                     </>
+                                )}
+                            </div>
+
+                            {/* Mobile Menu Button (visible on small screens) */}
+                            <div className="relative md:hidden">
+                                <button
+                                    ref={menuButtonRef}
+                                    className="p-2 text-gray-600 hover:text-gray-800"
+                                    onClick={handleMobileMenuClick}
+                                >
+                                    <Menu className="h-6 w-6" />
+                                </button>
+                                {showMobileMenu && (
+                                    <div
+                                        ref={mobileMenuRef}
+                                        className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-2"
+                                    >
+                                        <a 
+                                            href="/browse-books" 
+                                            className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                            onClick={() => setShowMobileMenu(false)}
+                                        >
+                                            Browse books
+                                        </a>
+                                        {userType === 'reader' && ( // Only show these for 'reader'
+                                            <>
+                                                <hr className="my-1 border-gray-200" />
+                                                <a 
+                                                    href="/dashboard" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Dashboard
+                                                </a>
+                                                <a 
+                                                    href="/wishlist" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Wishlist
+                                                </a>
+                                                <a 
+                                                    href="/my-reads" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    My Reads
+                                                </a>
+                                            </>
+                                        )}
+                                    </div>
                                 )}
                             </div>
 

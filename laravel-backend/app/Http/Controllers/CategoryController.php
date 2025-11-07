@@ -13,20 +13,20 @@ class CategoryController
     {
         if (request()->has('search') && request()->input('search') !== '') {
             $search = request()->input('search');
-            $categories = \App\Models\Category::where('name', 'like', '%' . $search . '%')->get();
+            $categories = \App\Models\Category::where('name', 'like', '%' . $search . '%')->orderBy('name', 'asc')->get();
             // send success and data
             return response()->json([
                 'success' => true,
                 'data' => $categories,
             ]);
         }
-        $categories = \App\Models\Category::all();
+        $categories = \App\Models\Category::orderBy('name', 'asc')->get();
         return response()->json($categories);
     }
 
     public function indexPaginated()
     {
-        $categories = \App\Models\Category::paginate(15);
+        $categories = \App\Models\Category::orderBy('name', 'asc')->paginate(15);
         return response()->json($categories);
     }
 

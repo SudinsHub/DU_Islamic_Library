@@ -12,13 +12,13 @@ class HallController
     public function index()
     {
 
-        $halls = \App\Models\Hall::all();
+        $halls = \App\Models\Hall::all()->orderBy('name', 'asc')->get();
         return response()->json($halls);
     }
     public function indexPaginated()
     {
 
-        $halls = \App\Models\Hall::paginate(15);
+        $halls = \App\Models\Hall::orderBy('name', 'asc')->paginate(15);
         return response()->json($halls);
     }
 

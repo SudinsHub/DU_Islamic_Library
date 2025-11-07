@@ -13,7 +13,7 @@ class AuthorController
 
     public function indexPaginated(){
         // Fetch all authors with pagination
-        $authors = Author::paginate(15);
+        $authors = Author::orderBy('name', 'asc')->paginate(15);
         return response()->json($authors);
     }
     public function index()
@@ -28,7 +28,7 @@ class AuthorController
             ]);
         }
         // Otherwise, return all authors
-        $authors = Author::all();
+        $authors = Author::all()->orderBy('name', 'asc')->get();
         return response()->json($authors);
     }
 
