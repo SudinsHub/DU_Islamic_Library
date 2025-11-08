@@ -21,14 +21,14 @@ class AuthorController
         // if there is a query parameter 'search', filter authors by name
         if (request()->has('search') && request()->input('search') !== '') {
             $search = request()->input('search');
-            $authors = Author::where('name', 'like', '%' . $search . '%')->get();
+            $authors = Author::where('name', 'like', '%' . $search . '%')->orderBy('name', 'asc')->get();
             return response()->json([
                 'data' => $authors,
                 'success' => true,
             ]);
         }
         // Otherwise, return all authors
-        $authors = Author::all()->orderBy('name', 'asc')->get();
+        $authors = Author::orderBy('name', 'asc')->get();
         return response()->json($authors);
     }
 

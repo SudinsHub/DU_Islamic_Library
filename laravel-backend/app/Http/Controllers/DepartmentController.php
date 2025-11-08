@@ -9,7 +9,7 @@ class DepartmentController
 {
     public function index(Request $request)
     {
-        $departments = Department::all()->orderBy('name', 'asc')->get();
+        $departments = Department::orderBy('name', 'asc')->get();
         return response()->json($departments);
     }
     public function indexPaginated(Request $request)

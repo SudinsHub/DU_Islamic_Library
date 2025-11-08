@@ -15,14 +15,14 @@ class PublisherController
         // If there is a query parameter 'search', filter publishers by name
         if (request()->has('search') && request()->input('search') !== '') {
             $search = request()->input('search');
-            $publishers = Publisher::where('name', 'like', '%' . $search . '%')->get();
+            $publishers = Publisher::where('name', 'like', '%' . $search . '%')->orderBy('name', 'asc')->get();
             return response()->json([
                 'success' => true,
                 'data' => $publishers,
             ]);
         }
         // Otherwise, return all publishers
-        $publishers = Publisher::all()->orderBy('name', 'asc')->get();
+        $publishers = Publisher::orderBy('name', 'asc')->get();
         return response()->json($publishers);
     }
 
