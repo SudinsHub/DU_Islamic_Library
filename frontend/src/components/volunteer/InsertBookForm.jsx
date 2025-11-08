@@ -5,139 +5,199 @@ import { Textarea } from '@/components/ui/textarea'; // Reusable Textarea compon
 import { buttonGreen } from "@/utils/colors"; // Your custom green color
 import { apiCall } from '@/utils/ApiCall'; // Your API utility
 import { useAuth } from '@/contexts/AuthContext'; // Assuming you have an AuthContext for authentication
+import { ChevronDown, Loader2, X } from 'lucide-react'; // Example icons from lucide-react (assuming available)
+
+// --- Helper component to simulate a Dropdown Menu/Combobox for selecting an existing entity ---
+// In a real application, you would use a Combobox or Select from shadcn/ui
+const SelectExistingEntity = ({
+    label,
+    placeholder,
+    value,
+    setValue,
+    setId,
+    options,
+    open,
+    setOpen,
+    idKey, // 'author_id', 'publisher_id', 'category_id'
+    nameKey, // 'name' for Author/Publisher/Category object
+}) => {
+    const ref = useRef(null);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handler = (event) => {
+            if (ref.current && !ref.current.contains(event.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [setOpen]);
+
+    const handleSelect = (option) => {
+        setValue(option[nameKey]);
+        setId(option[idKey]);
+        setOpen(false);
+    };
+    
+    const handleClear = (e) => {
+        e.stopPropagation();
+        setValue('');
+        setId(null);
+        setOpen(false);
+    }
+
+    return (
+        <div className="relative" ref={ref}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select Existing {label}
+            </label>
+            <div className="flex items-center space-x-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    onClick={() => setOpen(!open)}
+                    className="w-full justify-between border border-input h-10 px-3 py-2 bg-white text-left font-normal"
+                >
+                    {value ? value : placeholder}
+                    <div className="flex items-center">
+                        {value && (
+                            <X className="mr-2 h-4 w-4 shrink-0 opacity-50 hover:opacity-100" onClick={handleClear} />
+                        )}
+                        <ChevronDown className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? 'rotate-180' : 'rotate-0'}`} />
+                    </div>
+                </Button>
+            </div>
+            {open && options.length > 0 && (
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    {options.map((option) => (
+                        <div
+                            key={option[idKey]}
+                            onClick={() => handleSelect(option)}
+                            className={`p-2 cursor-pointer hover:bg-gray-100 ${value === option[nameKey] ? 'bg-gray-100 font-medium' : ''}`}
+                        >
+                            {option[nameKey]}
+                        </div>
+                    ))}
+                </div>
+            )}
+            {open && options.length === 0 && (
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-2 text-sm text-gray-500">
+                    No saved {label.toLowerCase()}s found.
+                </div>
+            )}
+        </div>
+    );
+};
 
 const InsertBookForm = () => {
     // --- State Management ---
-    const { token } = useAuth(); // Assuming you have a useAuth hook to get the token
+    const { token } = useAuth();
     const [formData, setFormData] = useState({
         title: '',
         author: '', // Display name for author
         author_id: null, // UUID for author
+        new_author_name: '', // New field for new entry
         publisher: '', // Display name for publisher
         publisher_id: null, // UUID for publisher
+        new_publisher_name: '', // New field for new entry
         category: '', // Display name for category
         category_id: null, // UUID for category
+        new_category_name: '', // New field for new entry
         description: '',
         copies_to_add: 1,
-        book_id: null, // To store ID of existing book
-        is_new_book: true, // Boolean to track if it's a new entry (system-wide)
-        image: null, // To store the selected image file object
+        book_id: null,
+        is_new_book: true,
+        image: null,
     });
 
+    // --- New States for All Saved Entities (No Search) ---
+    const [allAuthors, setAllAuthors] = useState([]);
+    const [allPublishers, setAllPublishers] = useState([]);
+    const [allCategories, setAllCategories] = useState([]);
+    const [loadingEntities, setLoadingEntities] = useState(false);
+
+    // --- State for Dropdown Open/Close (Replacing Search Suggestions) ---
+    const [isAuthorDropdownOpen, setIsAuthorDropdownOpen] = useState(false);
+    const [isPublisherDropdownOpen, setIsPublisherDropdownOpen] = useState(false);
+    const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+
+    // Existing Book Title Search State (Kept as is)
     const [bookSuggestions, setBookSuggestions] = useState([]);
     const [loadingBookSuggestions, setLoadingBookSuggestions] = useState(false);
     const [activeBookSuggestion, setActiveBookSuggestion] = useState(-1);
-
-    const [authorSuggestions, setAuthorSuggestions] = useState([]);
-    const [loadingAuthorSuggestions, setLoadingAuthorSuggestions] = useState(false);
-    const [activeAuthorSuggestion, setActiveAuthorSuggestion] = useState(-1);
-
-    const [publisherSuggestions, setPublisherSuggestions] = useState([]);
-    const [loadingPublisherSuggestions, setLoadingPublisherSuggestions] = useState(false);
-    const [activePublisherSuggestion, setActivePublisherSuggestion] = useState(-1);
-
-    const [categorySuggestions, setCategorySuggestions] = useState([]);
-    const [loadingCategorySuggestions, setLoadingCategorySuggestions] = useState(false);
-    const [activeCategorySuggestion, setActiveCategorySuggestion] = useState(-1);
-
+    const bookSuggestionsRef = useRef(null);
+    
+    // --- Form Status States ---
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState(null);
     const [formSuccess, setFormSuccess] = useState(null);
 
-    // --- Debounce Refs ---
-    const debounceTimeoutRef = useRef(null);
-    const authorDebounceTimeoutRef = useRef(null);
-    const publisherDebounceTimeoutRef = useRef(null);
-    const categoryDebounceTimeoutRef = useRef(null);
-
-    // --- Suggestion List Refs for Click Outside ---
-    const bookSuggestionsRef = useRef(null);
-    const authorSuggestionsRef = useRef(null);
-    const publisherSuggestionsRef = useRef(null);
-    const categorySuggestionsRef = useRef(null);
-
-    // --- Debounced API Call Helper ---
-    const debounceApiCall = useCallback((query, setSuggestions, setLoading, apiEndpoint, debounceRef, setActiveSuggestion) => {
-        if (query.length > 2) {
-            setLoading(true);
-            setSuggestions([]);
-            if (debounceRef.current) {
-                clearTimeout(debounceRef.current);
+    // --- Helper function for fetching all entities (no search query) ---
+    const getAllEntities = useCallback(async (apiEndpoint, setEntities, entityName) => {
+        setLoadingEntities(true);
+        try {
+            // NOTE: apiCall is modified to omit the 'search' query parameter entirely.
+            const response = await apiCall(apiEndpoint, {}, 'GET'); 
+            if (response.success) {
+                // Assuming the backend returns an array of objects
+                // e.g., [{ author_id: uuid, name: 'Author Name' }, ...]
+                setEntities(response.data);
+            } else {
+                console.error(`Failed to fetch all ${entityName}:`, response.message);
+                setEntities([]);
             }
-            debounceRef.current = setTimeout(async () => {
-                try {
-                    const response = await apiCall(`${apiEndpoint}?search=${query}`, {}, 'GET');
-                    if (response.success) {
-                        setSuggestions(response.data);
-                        setActiveSuggestion(-1); // Reset active suggestion on new search results
-                    } else {
-                        console.error(`Failed to fetch suggestions from ${apiEndpoint}:`, response.message);
-                        setSuggestions([]);
-                    }
-                } catch (error) {
-                    console.error(`Network error fetching suggestions from ${apiEndpoint}:`, error);
-                    setSuggestions([]);
-                } finally {
-                    setLoading(false);
-                }
-            }, 1500);
-        } else {
-            setSuggestions([]);
-            setLoading(false);
+        } catch (error) {
+            console.error(`Network error fetching all ${entityName}:`, error);
+            setEntities([]);
+        } finally {
+            setLoadingEntities(false);
         }
     }, []);
 
-    // --- Effects for Suggestions (Debounced API Calls) ---
-
-    // Effect for Book Title Suggestions
+    // --- Effect to fetch all entities on component mount ---
     useEffect(() => {
-        // Only fetch suggestions if is_new_book is false to search for existing books
-        // If the user types a new title, it's considered a new book, so don't fetch existing suggestions for it
-        if (formData.title.length > 2) {
-             setLoadingBookSuggestions(true);
-             setBookSuggestions([]);
-             if (debounceTimeoutRef.current) {
-                 clearTimeout(debounceTimeoutRef.current);
-             }
-             debounceTimeoutRef.current = setTimeout(async () => {
-                 try {
-                     const response = await apiCall(`/api/books/search?title=${formData.title}`, {}, 'GET');
-                     if (response.success) {
-                         setBookSuggestions(response.data);
-                         setActiveBookSuggestion(-1);
-                     } else {
-                         console.error('Failed to fetch book suggestions:', response.message);
-                         setBookSuggestions([]);
-                     }
-                 } catch (error) {
-                     console.error('Network error fetching book suggestions:', error);
-                     setBookSuggestions([]);
-                 } finally {
-                     setLoadingBookSuggestions(false);
-                 }
-             }, 1500);
-         } else {
-             setBookSuggestions([]);
-             setLoadingBookSuggestions(false);
-         }
-    }, [formData.title]);
+        // Fetch all authors
+        getAllEntities('/api/authors', setAllAuthors, 'authors');
+        // Fetch all publishers
+        getAllEntities('/api/publishers', setAllPublishers, 'publishers');
+        // Fetch all categories
+        getAllEntities('/api/categories', setAllCategories, 'categories');
+    }, [getAllEntities]);
 
-    // Effect for Author Suggestions
+
+    // --- Cleanup unused states/refs from the original code ---
+    // The previous state and logic for authorSuggestions, publisherSuggestions,
+    // categorySuggestions, loadingAuthorSuggestions, etc., are no longer needed 
+    // for existing entities, but I'll leave the original structure of the 
+    // existing component untouched where possible, only modifying the relevant parts.
+    // The original `debounceApiCall` for Author/Publisher/Category is now obsolete
+    // for selecting existing ones, but the `useEffect` hooks that call them are now
+    // removed/commented out to stop the search behavior.
+
+    // The original `useEffect` hooks for Author/Publisher/Category Suggestions are now OBSOLETE 
+    // as they used a search debounce. They are replaced by the fetch-all effect above.
+    /*
+    // Effect for Author Suggestions (DISABLED/REPLACED)
     useEffect(() => {
-        debounceApiCall(formData.author, setAuthorSuggestions, setLoadingAuthorSuggestions, '/api/authors', authorDebounceTimeoutRef, setActiveAuthorSuggestion);
+        // Original logic was here
     }, [formData.author, debounceApiCall]);
 
-    // Effect for Publisher Suggestions
+    // Effect for Publisher Suggestions (DISABLED/REPLACED)
     useEffect(() => {
-        debounceApiCall(formData.publisher, setPublisherSuggestions, setLoadingPublisherSuggestions, '/api/publishers', publisherDebounceTimeoutRef, setActivePublisherSuggestion);
+        // Original logic was here
     }, [formData.publisher, debounceApiCall]);
 
-    // Effect for Category Suggestions
+    // Effect for Category Suggestions (DISABLED/REPLACED)
     useEffect(() => {
-        debounceApiCall(formData.category, setCategorySuggestions, setLoadingCategorySuggestions, '/api/categories', categoryDebounceTimeoutRef, setActiveCategorySuggestion);
+        // Original logic was here
     }, [formData.category, debounceApiCall]);
+    */
 
-    // --- Click Outside Hook ---
+
+    // --- Click Outside Hook (Keep only for Book Suggestions) ---
     const useClickOutside = (ref, handler) => {
         useEffect(() => {
             const listener = (event) => {
@@ -155,10 +215,10 @@ const InsertBookForm = () => {
         }, [ref, handler]);
     };
 
+    // Keep only for book suggestions (the only one that still uses real-time search)
     useClickOutside(bookSuggestionsRef, () => setBookSuggestions([]));
-    useClickOutside(authorSuggestionsRef, () => setAuthorSuggestions([]));
-    useClickOutside(publisherSuggestionsRef, () => setPublisherSuggestions([]));
-    useClickOutside(categorySuggestionsRef, () => setCategorySuggestions([]));
+    // The previous useClickOutside hooks for A/P/C suggestions are removed/obsolete.
+
 
     // --- Event Handlers ---
 
@@ -169,96 +229,123 @@ const InsertBookForm = () => {
             const newState = {
                 ...prev,
                 [name]: value,
-                // Reset success/error messages on input change
                 formError: null,
                 formSuccess: null,
             };
 
-            // If any of these core fields are changed, it implies a new or modified book entry
-            if (['title', 'author', 'publisher', 'category'].includes(name)) {
+            // If the user types in the main title, it's a new search or book
+            if (name === 'title') {
                 newState.is_new_book = true;
-                newState.book_id = null; // Clear existing book ID
+                newState.book_id = null;
             }
 
-            // Clear specific IDs if their corresponding name field is being typed into
-            if (name === 'author') newState.author_id = null;
-            if (name === 'publisher') newState.publisher_id = null;
-            if (name === 'category') newState.category_id = null;
+            // If the user types in a NEW Author/Publisher/Category name input, 
+            // we must clear the corresponding SELECTED ID and NAME to prioritize the new entry
+            if (name === 'new_author_name') {
+                newState.author_id = null;
+                newState.author = '';
+            } else if (name === 'new_publisher_name') {
+                newState.publisher_id = null;
+                newState.publisher = '';
+            } else if (name === 'new_category_name') {
+                newState.category_id = null;
+                newState.category = '';
+            } else if (['author', 'publisher', 'category'].includes(name)) {
+                 // For the old A/P/C inputs (now handled by SelectExistingEntity) 
+                 // we maintain the logic to clear IDs, although these inputs are conceptually 
+                 // now part of the SelectExistingEntity component where selections directly 
+                 // set ID and Name.
+                if (name === 'author') newState.author_id = null;
+                if (name === 'publisher') newState.publisher_id = null;
+                if (name === 'category') newState.category_id = null;
+            }
+            
+            // Mark as new book if any core field is changed
+            if (['title', 'new_author_name', 'new_publisher_name', 'new_category_name'].includes(name)) {
+                newState.is_new_book = true;
+                newState.book_id = null;
+            }
 
             return newState;
         });
     };
 
-    // Handler for image file input
+    // Handler for image file input (unchanged)
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         setFormData(prev => ({
             ...prev,
             image: file,
-            is_new_book: true, // If an image is uploaded, it's definitely a new book or a new version
+            is_new_book: true,
             book_id: null,
         }));
         setFormError(null);
         setFormSuccess(null);
     };
 
-    // Handler for selecting an existing book from suggestions
+    // Handler for selecting an existing book from suggestions (unchanged)
     const handleBookSuggestionSelect = (book) => {
         setFormData(prev => ({
             ...prev,
             title: book.title,
+            // Auto-populate the selected/existing fields
             author: book.author_name || '',
             author_id: book.author_id,
+            // Also clear the new_* fields when an existing book is selected
+            new_author_name: '', 
             publisher: book.publisher_name || '',
             publisher_id: book.publisher_id,
+            new_publisher_name: '',
             category: book.category_name || '',
             category_id: book.category_id,
+            new_category_name: '',
+            
             description: book.description,
-            book_id: book.book_id, // Store the existing book's ID
-            is_new_book: false, // Mark as existing book
-            image: null, // Clear any selected image, as existing book has its own image_url
+            book_id: book.book_id,
+            is_new_book: false,
+            image: null,
         }));
-        setBookSuggestions([]); // Clear suggestions after selection
+        setBookSuggestions([]);
         setActiveBookSuggestion(-1);
     };
 
-    // Handler for selecting an Author suggestion
-    const handleAuthorSuggestionSelect = (author) => {
+    // Handler for setting an existing Author (used by SelectExistingEntity)
+    const handleAuthorSelect = (name, id) => {
         setFormData(prev => ({
             ...prev,
-            author: author.name,
-            author_id: author.author_id,
-            is_new_book: prev.book_id ? false : true, // If book_id exists, keep it existing, otherwise new
+            author: name,
+            author_id: id,
+            new_author_name: '', // Clear new entry field
+            is_new_book: prev.book_id ? false : true,
         }));
-        setAuthorSuggestions([]);
-        setActiveAuthorSuggestion(-1);
+        setIsAuthorDropdownOpen(false);
     };
-
-    // Handler for selecting a Publisher suggestion
-    const handlePublisherSuggestionSelect = (publisher) => {
+    
+    // Handler for setting an existing Publisher (used by SelectExistingEntity)
+    const handlePublisherSelect = (name, id) => {
         setFormData(prev => ({
             ...prev,
-            publisher: publisher.name,
-            publisher_id: publisher.publisher_id,
-            is_new_book: prev.book_id ? false : true, // If book_id exists, keep it existing, otherwise new
+            publisher: name,
+            publisher_id: id,
+            new_publisher_name: '', // Clear new entry field
+            is_new_book: prev.book_id ? false : true,
         }));
-        setPublisherSuggestions([]);
-        setActivePublisherSuggestion(-1);
+        setIsPublisherDropdownOpen(false);
     };
 
-    // Handler for selecting a Category suggestion
-    const handleCategorySuggestionSelect = (category) => {
+    // Handler for setting an existing Category (used by SelectExistingEntity)
+    const handleCategorySelect = (name, id) => {
         setFormData(prev => ({
             ...prev,
-            category: category.name,
-            category_id: category.category_id,
-            is_new_book: prev.book_id ? false : true, // If book_id exists, keep it existing, otherwise new
+            category: name,
+            category_id: id,
+            new_category_name: '', // Clear new entry field
+            is_new_book: prev.book_id ? false : true,
         }));
-        setCategorySuggestions([]);
-        setActiveCategorySuggestion(-1);
+        setIsCategoryDropdownOpen(false);
     };
 
-    // --- Keyboard Navigation Handlers ---
+    // --- Keyboard Navigation Handlers (Only for Book Title Search) ---
     const handleKeyDown = (e, suggestions, activeSuggestion, setActiveSuggestion, handleSelect) => {
         if (e.key === 'ArrowDown') {
             e.preventDefault();
@@ -271,10 +358,7 @@ const InsertBookForm = () => {
             handleSelect(suggestions[activeSuggestion]);
         } else if (e.key === 'Escape') {
             e.preventDefault();
-            setBookSuggestions([]); // Assuming this is called from book title input
-            setAuthorSuggestions([]);
-            setPublisherSuggestions([]);
-            setCategorySuggestions([]);
+            setBookSuggestions([]); 
             setActiveSuggestion(-1);
         }
     };
@@ -290,34 +374,64 @@ const InsertBookForm = () => {
         formDataToSend.append('title', formData.title);
         formDataToSend.append('description', formData.description || '');
         formDataToSend.append('copies_to_add', parseInt(formData.copies_to_add, 10));
-        formDataToSend.append('is_new_book', formData.is_new_book ? '1' : '0');
+        
+        // Determine is_new_book based on existence of book_id or presence of new metadata
+        let is_new_book = formData.is_new_book;
+
+        if (formData.book_id && 
+            !formData.new_author_name && !formData.new_publisher_name && !formData.new_category_name && 
+            !formData.image) {
+            // If an existing book is selected AND no new metadata is provided, it's an existing book update
+            is_new_book = false;
+        } else if (formData.book_id && (formData.new_author_name || formData.new_publisher_name || formData.new_category_name || formData.image)) {
+            // If an existing book is selected BUT new metadata (A/P/C name or Image) is provided, 
+            // the backend must treat this as creating a *new book entry* (new version/edition)
+            is_new_book = true;
+        } else if (!formData.book_id) {
+            // If no existing book was selected, it's a new book
+            is_new_book = true;
+        }
+
+        formDataToSend.append('is_new_book', is_new_book ? '1' : '0');
+
 
         // Conditionally append book_id based on is_new_book
-        if (!formData.is_new_book && formData.book_id) {
+        if (!is_new_book && formData.book_id) {
             formDataToSend.append('book_id', formData.book_id);
         }
 
-        // Conditionally append author/publisher/category IDs or names
-        if (formData.author_id) {
+        // --- New Logic for A/P/C: Prioritize new_* input over ID, then ID over main name ---
+
+        // Author Logic: 1. New name, 2. Existing ID, 3. Existing name (fall through from selection)
+        if (formData.new_author_name) {
+            formDataToSend.append('author_name', formData.new_author_name);
+        } else if (formData.author_id) {
             formDataToSend.append('author_id', formData.author_id);
         } else if (formData.author) {
-            formDataToSend.append('author_name', formData.author);
+             // Fallback to name if it's auto-filled but no ID was explicitly selected (e.g., from an existing book)
+             formDataToSend.append('author_name', formData.author);
         }
 
-        if (formData.publisher_id) {
+        // Publisher Logic
+        if (formData.new_publisher_name) {
+            formDataToSend.append('publisher_name', formData.new_publisher_name);
+        } else if (formData.publisher_id) {
             formDataToSend.append('publisher_id', formData.publisher_id);
         } else if (formData.publisher) {
-            formDataToSend.append('publisher_name', formData.publisher);
+             formDataToSend.append('publisher_name', formData.publisher);
         }
 
-        if (formData.category_id) {
+        // Category Logic
+        if (formData.new_category_name) {
+            formDataToSend.append('category_name', formData.new_category_name);
+        } else if (formData.category_id) {
             formDataToSend.append('category_id', formData.category_id);
         } else if (formData.category) {
             formDataToSend.append('category_name', formData.category);
         }
 
         // Append the image file only if it's a new book AND an image is selected
-        if (formData.is_new_book && formData.image) {
+        if (is_new_book && formData.image) {
             formDataToSend.append('image', formData.image);
         }
 
@@ -326,25 +440,29 @@ const InsertBookForm = () => {
             for (let pair of formDataToSend.entries()) {
                 console.log(pair[0] + ': ' + pair[1]);
             }
+            
             const response = await apiCall('/api/books', formDataToSend, 'POST', token);
             if (response.success) {
                 setFormSuccess('Book entry updated successfully!');
-                // Reset form fields after successful submission, keep copies_to_add
+                // Reset all fields, keep copies_to_add default
                 setFormData({
                     title: '',
                     author: '',
                     author_id: null,
+                    new_author_name: '', 
                     publisher: '',
                     publisher_id: null,
+                    new_publisher_name: '',
                     category: '',
                     category_id: null,
+                    new_category_name: '',
                     description: '',
-                    copies_to_add: 1, // Keep default for next entry
+                    copies_to_add: 1, 
                     book_id: null,
                     is_new_book: true,
-                    image: null, // Clear selected image
+                    image: null,
                 });
-                // Clear file input manually if it exists
+                // Clear file input manually
                 if (document.getElementById('image')) {
                     document.getElementById('image').value = '';
                 }
@@ -368,7 +486,7 @@ const InsertBookForm = () => {
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Insert/Update Book Copies</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Title */}
+                {/* Title (Search/Autocomplete - UNCHANGED) */}
                 <div className="relative">
                     <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                         Title <span className="text-red-500">*</span>
@@ -404,104 +522,143 @@ const InsertBookForm = () => {
                         </ul>
                     )}
                 </div>
-
-                {/* Author */}
-                <div className="relative">
-                    <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">
+                
+                {/* --- Author Fields (MODIFIED) --- */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                         Author <span className="text-red-500">*</span>
                     </label>
-                    <Input
-                        type="text"
-                        name="author"
-                        id="author"
-                        value={formData.author}
-                        onChange={handleChange}
-                        onKeyDown={(e) => handleKeyDown(e, authorSuggestions, activeAuthorSuggestion, setActiveAuthorSuggestion, handleAuthorSuggestionSelect)}
-                        placeholder="Enter author name"
-                        required
-                        className="w-full"
-                    />
-                    {loadingAuthorSuggestions && <p className="text-sm text-gray-500 mt-1">Searching...</p>}
-                    {authorSuggestions.length > 0 && (
-                        <ul ref={authorSuggestionsRef} className="bg-white border border-gray-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg z-10 absolute w-full">
-                            {authorSuggestions.map((author, index) => (
-                                <li
-                                    key={author.author_id}
-                                    onClick={() => handleAuthorSuggestionSelect(author)}
-                                    className={`p-3 cursor-pointer hover:bg-gray-100 border-b last:border-b-0 text-gray-800 ${index === activeAuthorSuggestion ? 'bg-gray-200' : ''}`}
-                                >
-                                    {author.name}
-                                </li>
-                            ))}
-                        </ul>
+                    {loadingEntities ? (
+                        <div className="flex items-center text-gray-500">
+                             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading authors...
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {/* 1. Existing Author Dropdown */}
+                            <SelectExistingEntity
+                                label="Author"
+                                placeholder="Select an author"
+                                value={formData.author}
+                                setValue={(name) => handleAuthorSelect(name, formData.author_id)}
+                                setId={(id) => handleAuthorSelect(formData.author, id)}
+                                options={allAuthors}
+                                open={isAuthorDropdownOpen}
+                                setOpen={setIsAuthorDropdownOpen}
+                                fieldKey="author"
+                                idKey="author_id"
+                                nameKey="name"
+                            />
+                            
+                            {/* 2. New Author Input */}
+                            <div>
+                                <label htmlFor="new_author_name" className="block text-xs font-medium text-gray-500 mt-2 mb-1">
+                                    OR type a new author name (will override selection)
+                                </label>
+                                <Input
+                                    type="text"
+                                    name="new_author_name"
+                                    id="new_author_name"
+                                    value={formData.new_author_name}
+                                    onChange={handleChange}
+                                    placeholder="Type a new author name"
+                                    className="w-full"
+                                />
+                            </div>
+                        </div>
                     )}
                 </div>
 
-                {/* Publisher */}
-                <div className="relative">
-                    <label htmlFor="publisher" className="block text-sm font-medium text-gray-700 mb-1">
+                {/* --- Publisher Fields (MODIFIED) --- */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                         Publisher <span className="text-red-500">*</span>
                     </label>
-                    <Input
-                        type="text"
-                        name="publisher"
-                        id="publisher"
-                        value={formData.publisher}
-                        onChange={handleChange}
-                        onKeyDown={(e) => handleKeyDown(e, publisherSuggestions, activePublisherSuggestion, setActivePublisherSuggestion, handlePublisherSuggestionSelect)}
-                        placeholder="Enter publisher"
-                        required
-                        className="w-full"
-                    />
-                    {loadingPublisherSuggestions && <p className="text-sm text-gray-500 mt-1">Searching...</p>}
-                    {publisherSuggestions.length > 0 && (
-                        <ul ref={publisherSuggestionsRef} className="bg-white border border-gray-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg z-10 absolute w-full">
-                            {publisherSuggestions.map((publisher, index) => (
-                                <li
-                                    key={publisher.publisher_id}
-                                    onClick={() => handlePublisherSuggestionSelect(publisher)}
-                                    className={`p-3 cursor-pointer hover:bg-gray-100 border-b last:border-b-0 text-gray-800 ${index === activePublisherSuggestion ? 'bg-gray-200' : ''}`}
-                                >
-                                    {publisher.name}
-                                </li>
-                            ))}
-                        </ul>
+                    {loadingEntities ? (
+                        <div className="flex items-center text-gray-500">
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading publishers...
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                             {/* 1. Existing Publisher Dropdown */}
+                            <SelectExistingEntity
+                                label="Publisher"
+                                placeholder="Select a publisher"
+                                value={formData.publisher}
+                                setValue={(name) => handlePublisherSelect(name, formData.publisher_id)}
+                                setId={(id) => handlePublisherSelect(formData.publisher, id)}
+                                options={allPublishers}
+                                open={isPublisherDropdownOpen}
+                                setOpen={setIsPublisherDropdownOpen}
+                                fieldKey="publisher"
+                                idKey="publisher_id"
+                                nameKey="name"
+                            />
+
+                             {/* 2. New Publisher Input */}
+                            <div>
+                                <label htmlFor="new_publisher_name" className="block text-xs font-medium text-gray-500 mt-2 mb-1">
+                                    OR type a new publisher name (will override selection)
+                                </label>
+                                <Input
+                                    type="text"
+                                    name="new_publisher_name"
+                                    id="new_publisher_name"
+                                    value={formData.new_publisher_name}
+                                    onChange={handleChange}
+                                    placeholder="Type a new publisher name"
+                                    className="w-full"
+                                />
+                            </div>
+                        </div>
                     )}
                 </div>
 
-                {/* Category */}
-                <div className="relative">
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                {/* --- Category Fields (MODIFIED) --- */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                         Category <span className="text-red-500">*</span>
                     </label>
-                    <Input
-                        type="text"
-                        name="category"
-                        id="category"
-                        value={formData.category}
-                        onChange={handleChange}
-                        onKeyDown={(e) => handleKeyDown(e, categorySuggestions, activeCategorySuggestion, setActiveCategorySuggestion, handleCategorySuggestionSelect)}
-                        placeholder="e.g., Fiction, Science, History"
-                        required
-                        className="w-full"
-                    />
-                    {loadingCategorySuggestions && <p className="text-sm text-gray-500 mt-1">Searching...</p>}
-                    {categorySuggestions.length > 0 && (
-                        <ul ref={categorySuggestionsRef} className="bg-white border border-gray-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg z-10 absolute w-full">
-                            {categorySuggestions.map((category, index) => (
-                                <li
-                                    key={category.category_id}
-                                    onClick={() => handleCategorySuggestionSelect(category)}
-                                    className={`p-3 cursor-pointer hover:bg-gray-100 border-b last:border-b-0 text-gray-800 ${index === activeCategorySuggestion ? 'bg-gray-200' : ''}`}
-                                >
-                                    {category.name}
-                                </li>
-                            ))}
-                        </ul>
+                    {loadingEntities ? (
+                        <div className="flex items-center text-gray-500">
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading categories...
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                             {/* 1. Existing Category Dropdown */}
+                            <SelectExistingEntity
+                                label="Category"
+                                placeholder="Select a category"
+                                value={formData.category}
+                                setValue={(name) => handleCategorySelect(name, formData.category_id)}
+                                setId={(id) => handleCategorySelect(formData.category, id)}
+                                options={allCategories}
+                                open={isCategoryDropdownOpen}
+                                setOpen={setIsCategoryDropdownOpen}
+                                fieldKey="category"
+                                idKey="category_id"
+                                nameKey="name"
+                            />
+                            
+                             {/* 2. New Category Input */}
+                            <div>
+                                <label htmlFor="new_category_name" className="block text-xs font-medium text-gray-500 mt-2 mb-1">
+                                    OR type a new category name (will override selection)
+                                </label>
+                                <Input
+                                    type="text"
+                                    name="new_category_name"
+                                    id="new_category_name"
+                                    value={formData.new_category_name}
+                                    onChange={handleChange}
+                                    placeholder="Type a new category name"
+                                    className="w-full"
+                                />
+                            </div>
+                        </div>
                     )}
                 </div>
 
-                {/* Description */}
+                {/* Description (UNCHANGED) */}
                 <div>
                     <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                         Description
@@ -517,18 +674,18 @@ const InsertBookForm = () => {
                     />
                 </div>
 
-                {/* Image Upload */}
+                {/* Image Upload (UNCHANGED) */}
                 <div>
-                    <label htmlFor="image" className="flex block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="image" className="flex flex-col block text-sm font-medium text-gray-700 mb-1">
                         Book Cover Image
-                        <span className="text-gray-500 text-xs">Max 2MB, upload image only if it is a new book for the system.</span>
+                        <span className="text-gray-500 text-xs font-normal">Max 2MB, upload image only if it is a new book for the system.</span>
                     </label>
                     <Input
                         type="file"
                         name="image"
                         id="image"
                         onChange={handleImageChange}
-                        accept="image/*" 
+                        accept="image/*"
                         className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
                     />
                     {formData.image && (
@@ -541,7 +698,7 @@ const InsertBookForm = () => {
                     )}
                 </div>
 
-                {/* Copies to Add */}
+                {/* Copies to Add (UNCHANGED) */}
                 <div>
                     <label htmlFor="copies_to_add" className="block text-sm font-medium text-gray-700 mb-1">
                         Number of Copies to Add <span className="text-red-500">*</span>
