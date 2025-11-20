@@ -81,13 +81,13 @@ export default function Footer() {
           <div className="flex flex-col gap-4">
             <h3 className="text-green-500 font-medium font-onest">Our Links</h3>
             <div className="flex flex-col gap-3">
-              <a
+              {/* <a
                 href="#"
                 className="flex items-center justify-between text-sm hover:text-green-600 transition-colors font-onest"
               >
                 <span>Qazre Hasana</span>
                 <ArrowUpRight size={16} />
-              </a>
+              </a> */}
               <a
                 href="#"
                 className="flex items-center justify-between text-sm hover:text-green-600 transition-colors font-onest"
@@ -95,13 +95,13 @@ export default function Footer() {
                 <span>DU Islamic Library</span>
                 <ArrowUpRight size={16} />
               </a>
-              <a
+              {/* <a
                 href="#"
                 className="flex items-center justify-between text-sm hover:text-green-600 transition-colors font-onest"
               >
                 <span>Practicing Bibaho</span>
                 <ArrowUpRight size={16} />
-              </a>
+              </a> */}
               <a
                 onClick={() => navigate("/user/volunteer")}
                 className="flex items-center justify-between text-sm hover:text-green-600 transition-colors font-onest"

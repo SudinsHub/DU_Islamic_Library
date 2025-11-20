@@ -122,7 +122,7 @@ const onSubmit = async (values) => {
       });
       toast.success("Book updated successfully!");
     } else {
-      await axios.post(`${baseUrl}/api/admin-book`, formData, {
+      await axios.post(`${baseUrl}/api/vol-book`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -537,7 +537,7 @@ const VolBookManagementPage = () => {
 
       const baseUrl = import.meta.env.VITE_API_URL || '';
 
-      const response = await axios.get(`${baseUrl}/api/admin-book`, {
+      const response = await axios.get(`${baseUrl}/api/vol-book`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
