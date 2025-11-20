@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import InsertBookForm from '@/components/volunteer/InsertBookForm';
 import PendingRequests from '@/components/volunteer/PendingRequests';
 import CurrentLendings from '@/components/volunteer/CurrentLendings';
+import VolBookIndex from '@/components/volunteer/VolBookIndex';
 import { apiCall } from '@/utils/ApiCall'; // Assuming your API utility
 import { buttonGreen } from "@/utils/colors"; // Your custom green color
 import { useAuth } from '@/contexts/AuthContext'; // Adjust path as needed
@@ -117,6 +118,18 @@ const VolunteerDashboard = () => {
                                 Current Lendings
                             </button>
                         </li>
+                        <li>
+                            <button
+                                onClick={() => setActiveSection('volBookIndex')}
+                                className={`py-3 px-4 rounded-t-lg transition-colors duration-200 ${
+                                    activeSection === 'volBookIndex'
+                                        ? 'bg-gray-50 text-gray-900 border-b-2 border-green-500'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                                }`}
+                            >
+                                Book Index
+                            </button>
+                        </li>
                     </ul>
                 </nav>
 
@@ -125,6 +138,7 @@ const VolunteerDashboard = () => {
                     {activeSection === 'insertBook' && <InsertBookForm />}
                     {activeSection === 'pendingRequests' && <PendingRequests />}
                     {activeSection === 'currentLendings' && <CurrentLendings />}
+                    {activeSection === 'volBookIndex' && <VolBookIndex />}
                 </div>
             </div>
         </div>
