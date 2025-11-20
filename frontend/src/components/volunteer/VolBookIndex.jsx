@@ -457,7 +457,7 @@ const InventoryDialog = ({
                   <TableHead>Total Copies</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody> // only show the collection for the user's hall
+              <TableBody> 
 
                 {collections.filter(col => col.hall.hall_id === user.hall_id).map((col, index) => (
                   <TableRow key={col.hall.hall_id}>
@@ -632,19 +632,7 @@ const VolBookManagementPage = () => {
           value={filterTitle}
           onChange={(e) => setFilterTitle(e.target.value)}
         />
-        <Select value={filterHall} onValueChange={setFilterHall}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by Hall" />
-          </SelectTrigger>
-          <SelectContent>
-            {/* <SelectItem value="">All Halls</SelectItem> Option to clear filter */}
-            {halls.map((hall) => (
-              <SelectItem key={hall.hall_id} value={hall.hall_id}>
-                {hall.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
         <Select value={filterAuthor} onValueChange={setFilterAuthor}>
           <SelectTrigger>
             <SelectValue placeholder="Filter by Author" />
@@ -725,7 +713,6 @@ const VolBookManagementPage = () => {
                       <TableCell className="space-x-2">
                         <Button variant="outline" size="sm" onClick={() => handleEditBookClick(book)}>Edit</Button>
                         <Button variant="outline" size="sm" onClick={() => handleManageInventoryClick(book)}>Manage Inventory</Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteBook(book.book_id)}>Delete</Button>
                       </TableCell>
                     </TableRow>
                   ))
