@@ -15,6 +15,10 @@ const LibraryBookCard = ({
   const navigate = useNavigate();
   const baseURL = import.meta.env.VITE_API_URL ;
   const handleClick = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "instant", // or "smooth"
+    });
     navigate(`/book-details?id=${id}`);
   };
   return (

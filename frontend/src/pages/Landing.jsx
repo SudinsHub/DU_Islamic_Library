@@ -98,7 +98,7 @@ export default function Home() {
           </div>
         </section>
 
-        <div className="relative z-10 px-6 max-w-5xl mx-auto text-center py-10 sm:py-8">
+        <div className="relative z-10 px-6 max-w-5xl mx-auto text-center py-5 sm:py-8">
           {/* Features Preview */}
           <div className="grid grid-cols-3 gap-2 mt-10">
             {features.map((feature, i) => {
