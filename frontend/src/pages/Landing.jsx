@@ -20,7 +20,7 @@ export default function Home() {
   const features = [
     { icon: BookOpen, title: "বিস্তৃত সংগ্রহ", description: "ইসলামিক জ্ঞান, শিক্ষা এবং সংস্কৃতির বিস্তৃত সংগ্রহ" },
     { icon: Shield, title: "নিরাপদ পরিবেশ", description: "সম্পূর্ণ শরীয়তসম্মত এবং আরামদায়ক পরিবেশ" },
-    { icon: Users, title: "সক্রিয় সম্প্রদায়", description: "ঢাকা বিশ্ববিদ্যালয়ের হাজার হাজার সক্রিয় শিক্ষার্থী" },
+    { icon: Users, title: "সক্রিয় কমিউনিটি", description: "ঢাকা বিশ্ববিদ্যালয়ের হাজার হাজার সক্রিয় শিক্ষার্থী" },
   ]
 
   return (
