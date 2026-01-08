@@ -10,10 +10,13 @@ import AuthPage from '@/components/auth/AuthPage';
 import ReaderDashboard from '@/components/reader/ReaderDashboard';
 import ResetPassword from '@/components/auth/ResetPassword';
 import ConfirmPassword from '@/pages/ConfirmPassword';
-
+import ArabicCourse from '@/pages/ArabicCourse'
 const AppRoutes = () => {
   return (
     <Routes>
+      <Route>
+        <Route path="courses/tajweed" element={<ArabicCourse />} />
+      </Route>
       <Route element={<HomeLayout />}>
         <Route index element={<Home />} />
         <Route path="wishlist" element={<Wishlist />} />
