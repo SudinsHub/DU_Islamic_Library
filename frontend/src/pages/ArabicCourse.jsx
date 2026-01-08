@@ -207,7 +207,7 @@ const ArabicCoursePage = () => {
               <p className="text-lg text-gray-700 mb-8 leading-relaxed max-w-2xl mx-auto">
                 এই কোর্সের মাধ্যমে আপনার জ্ঞান শুরু করুন এবং আমাদের বিশাল ইসলামিক লাইব্রেরিতে হাজারো বই, প্রকাশনা এবং সম্পদ আবিষ্কার করুন। কুরআন, হাদিস, ফিক্হ এবং আরও অনেক কিছু পাবেন এক জায়গায়।
               </p>
-              <a href="/" className="inline-block bg-gradient-to-r from-[#0CCE6B] to-emerald-600 text-white px-12 py-5 rounded-full text-xl font-bold shadow-2xl hover:shadow-emerald-500/50 transform hover:scale-110 transition-all duration-300">
+              <a href="/" className="inline-block bg-gradient-to-r from-[#0CCE6B] to-emerald-600 text-white px-12 py-5 rounded-sm text-xl font-bold shadow-2xl hover:shadow-emerald-500/50 transform hover:scale-110 transition-all duration-300">
                 ঘুরে আসুন ঢাকা বিশ্ববিদ্যালয় ইসলামিক লাইব্রেরি থেকে
               </a>
             </div>
