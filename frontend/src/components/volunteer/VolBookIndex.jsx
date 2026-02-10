@@ -382,18 +382,16 @@ const InventoryDialog = ({
     fetchCollections();
   }, [book, isOpen, token, halls]);
 
-  const handleCollectionChange = (
-    index,
-    field,
-    value
-  ) => {
-    const newCollections = [...collections];
-    newCollections[index] = {
-      ...newCollections[index],
-      [field]: parseInt(value) || 0,
-    };
-    setCollections(newCollections);
+  const handleCollectionChange = (hallId, field, value) => {
+    setCollections(prev =>
+      prev.map(col =>
+        col.hall_id === hallId
+          ? { ...col, [field]: parseInt(value) || 0 }
+          : col
+      )
+    );
   };
+
 
   const handleSaveInventory = async () => {
     try {
@@ -459,14 +457,14 @@ const InventoryDialog = ({
               </TableHeader>
               <TableBody> 
 
-                {collections.filter(col => col.hall.hall_id === user.hall_id).map((col, index) => (
+                {collections.filter(col => col.hall.hall_id === user.hall_id).map((col) => (
                   <TableRow key={col.hall.hall_id}>
                     <TableCell>{col.hall.name}</TableCell>
                     <TableCell>
                       <Input
                         type="number"
                         value={col.available_copies}
-                        onChange={(e) => handleCollectionChange(index, 'available_copies', e.target.value)}
+                        onChange={(e) => handleCollectionChange(col.hall_id, 'available_copies', e.target.value)}
                         min="0"
                       />
                     </TableCell>
@@ -474,7 +472,7 @@ const InventoryDialog = ({
                       <Input
                         type="number"
                         value={col.total_copies}
-                        onChange={(e) => handleCollectionChange(index, 'total_copies', e.target.value)}
+                        onChange={(e) => handleCollectionChange(col.hall_id, 'total_copies', e.target.value)}
                         min="0"
                       />
                     </TableCell>
