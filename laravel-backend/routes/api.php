@@ -135,9 +135,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Volunteer specific routes
     Route::middleware(VolunteerMiddleware::class)->group(function () {
-        Route::get('/volunteer/tasks', function () {
-            return response()->json(['message' => 'Here are the tasks for volunteers. You have volunteer privileges.']);
-        });
         Route::apiResource('vol-book', AdminBookController::class)->parameters(['admin-book' => 'book']);
         Route::get('vol-book/{book}/collections', [AdminBookController::class, 'getBookCollections']);
         Route::put('vol-book/{book}/collections', [AdminBookController::class, 'manageBookCollections']);
