@@ -287,12 +287,14 @@ const Navbar = () => {
                             {/* Desktop Links (visible on md screens and up) */}
                             <div className="hidden md:flex items-center gap-4">
                                 {/* Browse books - Desktop */}
-                                <button
-                                    className={`px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-[${buttonGreen}] transition-colors text-sm md:text-base`} // Responsive text size
-                                    onClick={handleBrowseBooks}
-                                >
-                                    Browse books
-                                </button>
+                                {userType === 'reader' && (
+                                    <button
+                                        className={`px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-[${buttonGreen}] transition-colors text-sm md:text-base`} // Responsive text size
+                                        onClick={handleBrowseBooks}
+                                    >
+                                        Browse books
+                                    </button>
+                                )}
                                 {userType === 'reader' && ( // Only show these for 'reader'
                                     <>
                                         <a href="/dashboard" className={`text-gray-800 font-medium hover:text-[${buttonGreen}] text-sm md:text-base`}>Dashboard</a> {/* Responsive text size */}
@@ -316,15 +318,15 @@ const Navbar = () => {
                                         ref={mobileMenuRef}
                                         className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-2"
                                     >
-                                        <a 
-                                            href="/browse-books" 
-                                            className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
-                                            onClick={() => setShowMobileMenu(false)}
-                                        >
-                                            Browse books
-                                        </a>
-                                        {userType === 'reader' && ( // Only show these for 'reader'
+                                        {userType === 'reader' && (
                                             <>
+                                                <a 
+                                                    href="/browse-books" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Browse books
+                                                </a>
                                                 <hr className="my-1 border-gray-200" />
                                                 <a 
                                                     href="/dashboard" 
@@ -346,6 +348,105 @@ const Navbar = () => {
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     My Reads
+                                                </a>
+                                            </>
+                                        )}
+                                        {userType === 'volunteer' && (
+                                            <>
+                                                <a 
+                                                    href="/user/volunteer/insert-book" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Insert Book
+                                                </a>
+                                                <a 
+                                                    href="/user/volunteer/pending-requests" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Pending Requests
+                                                </a>
+                                                <a 
+                                                    href="/user/volunteer/current-lendings" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Current Lendings
+                                                </a>
+                                                <a 
+                                                    href="/user/volunteer/book-index" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Book Index
+                                                </a>
+                                            </>
+                                        )}
+                                        {userType === 'admin' && (
+                                            <>
+                                                <a 
+                                                    href="/user/admin/verify-volunteers" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Verify Volunteers
+                                                </a>
+                                                <a 
+                                                    href="/user/admin/insert-books" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Insert Books
+                                                </a>
+                                                <a 
+                                                    href="/user/admin/pending-requests" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Pending Requests
+                                                </a>
+                                                <a 
+                                                    href="/user/admin/pending-borrows" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Pending Borrows
+                                                </a>
+                                                <a 
+                                                    href="/user/admin/readers" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Readers
+                                                </a>
+                                                <a 
+                                                    href="/user/admin/volunteers" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Volunteers
+                                                </a>
+                                                <a 
+                                                    href="/user/admin/book-index" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Book Index
+                                                </a>
+                                                <a 
+                                                    href="/user/admin/entity-management" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Entity Management
+                                                </a>
+                                                <a 
+                                                    href="/user/admin/admin-management" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Admin Management
                                                 </a>
                                             </>
                                         )}

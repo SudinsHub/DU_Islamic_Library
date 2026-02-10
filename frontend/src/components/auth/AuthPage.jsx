@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'; // Import useParams a
 import { useAuth } from '@/contexts/AuthContext'; // Adjust path as needed
 import LoginForm from './LoginPage'; // Adjust path as needed
 import RegistrationForm from './RegistrationForm'; // Adjust path as needed
-import VolunteerDashboard from '@/pages/VolunteerDashboard';
-import AdminDashboard from '@/pages/AdminDashboard';
 
 
 /**
@@ -54,10 +52,12 @@ function AuthPage() {
                     </div>
                 );
             }
-            return <VolunteerDashboard />;
+            navigate('/user/volunteer/insert-book', { replace: true });
+            return null;
         }
         if (authenticatedUserType === 'admin') {
-            return <AdminDashboard />;
+            navigate('/user/admin/verify-volunteers', { replace: true });
+            return null;
         }
         // Assuming 'reader' is the default for general users if no specific dashboard
         // return <ReaderDashboard />; // Assuming you'll have a ReaderDashboard now

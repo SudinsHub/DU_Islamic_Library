@@ -1,3 +1,4 @@
+// VolunteerDashboard,jsx
 import React, { useState, useEffect } from 'react';
 import InsertBookForm from '@/components/volunteer/InsertBookForm';
 import PendingRequests from '@/components/volunteer/PendingRequests';
@@ -8,7 +9,7 @@ import { buttonGreen } from "@/utils/colors"; // Your custom green color
 import { useAuth } from '@/contexts/AuthContext'; // Adjust path as needed
 import { toast } from 'react-toastify';
 const VolunteerDashboard = () => {
-    const [activeSection, setActiveSection] = useState('insertBook'); // 'insertBook', 'pendingRequests', 'currentLendings'
+    const [activeSection, setActiveSection] = useState('insertBook'); // 'insertBook', 'pendingRequests', 'currentLendings', volBookIndex
     const [isVolunteerAvailable, setIsVolunteerAvailable] = useState(false);
     const [loadingAvailability, setLoadingAvailability] = useState(true);
     const [errorAvailability, setErrorAvailability] = useState(null);

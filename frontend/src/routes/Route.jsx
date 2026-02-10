@@ -1,3 +1,4 @@
+// Route.jsx
 import { Routes, Route } from 'react-router';
 import HomeLayout from '../layouts/HomeLayout';
 import Home from '../pages/Home';
@@ -11,6 +12,9 @@ import ReaderDashboard from '@/components/reader/ReaderDashboard';
 import ResetPassword from '@/components/auth/ResetPassword';
 import ConfirmPassword from '@/pages/ConfirmPassword';
 import ArabicCourse from '@/pages/ArabicCourse'
+import VolunteerDashboardLayout from '@/components/volunteer/VolunteerDashboardLayout';
+import AdminDashboardLayout from '@/components/admin/AdminDashboardLayout';
+
 const AppRoutes = () => {
   return (
     <Routes>
@@ -30,6 +34,12 @@ const AppRoutes = () => {
 
         <Route path="user/:userType" element={<AuthPage />} />
       </Route>
+
+      {/* Volunteer Dashboard Routes */}
+      <Route path="user/volunteer/:section" element={<VolunteerDashboardLayout />} />
+      
+      {/* Admin Dashboard Routes */}
+      <Route path="user/admin/:section" element={<AdminDashboardLayout />} />
     </Routes>
   );
 };
