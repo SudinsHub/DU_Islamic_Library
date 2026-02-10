@@ -114,7 +114,7 @@ const onSubmit = async (values) => {
     const baseUrl = import.meta.env.VITE_API_URL || '';
 
     if (book) {
-      await axios.post(`${baseUrl}/api/vol-book/${book.book_id}?_method=PUT`, formData, {
+      await axios.put(`${baseUrl}/api/vol-book/${book.book_id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
