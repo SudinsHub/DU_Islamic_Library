@@ -12,6 +12,7 @@ import VolunteersPage from '@/components/admin/AdminVolunteersPage';
 import BookIndex from '@/components/admin/BookIndex';
 import EntityManagement from '@/components/admin/EntityManagement';
 import RegistrationForm from '@/components/auth/RegistrationForm';
+import Navbar from '@/components/Navbar';
 
 const AdminDashboardLayout = () => {
     const { section } = useParams();
@@ -53,6 +54,8 @@ const AdminDashboardLayout = () => {
     const currentSectionKey = Object.keys(validSections).includes(section) ? section : 'verify-volunteers';
 
     return (
+        <>
+        <Navbar/>
         <div className="flex min-h-screen bg-gray-100">
             {/* Sidebar - only visible on large screens */}
             <DashboardSidebar userType="admin" />
@@ -74,6 +77,7 @@ const AdminDashboardLayout = () => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

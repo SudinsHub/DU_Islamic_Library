@@ -9,6 +9,7 @@ import InsertBookForm from '@/components/volunteer/InsertBookForm';
 import PendingRequests from '@/components/volunteer/PendingRequests';
 import CurrentLendings from '@/components/volunteer/CurrentLendings';
 import VolBookIndex from '@/components/volunteer/VolBookIndex';
+import Navbar from '@/components/Navbar';
 
 const VolunteerDashboardLayout = () => {
     const { section } = useParams();
@@ -77,6 +78,8 @@ const VolunteerDashboardLayout = () => {
     };
 
     return (
+        <>
+        <Navbar/>
         <div className="flex min-h-screen bg-gray-100">
             {/* Sidebar - only visible on large screens */}
             <DashboardSidebar userType="volunteer" />
@@ -89,7 +92,7 @@ const VolunteerDashboardLayout = () => {
                         <h1 className="text-3xl font-bold text-gray-800">
                             Welcome, {volunteerName}!
                         </h1>
-                        <div className="flex items-center gap-4">
+                        {/* <div className="flex items-center gap-4">
                             {loadingAvailability ? (
                                 <span className="text-gray-500">Loading...</span>
                             ) : (
@@ -111,7 +114,7 @@ const VolunteerDashboardLayout = () => {
                                 </div>
                             )}
                             {errorAvailability && <p className="text-red-500 text-sm">{errorAvailability}</p>}
-                        </div>
+                        </div> */}
                     </div>
                 </div>
 
@@ -123,6 +126,7 @@ const VolunteerDashboardLayout = () => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 
