@@ -80,12 +80,12 @@ const VolunteerDashboardLayout = () => {
     return (
         <>
         <Navbar/>
-        <div className="flex min-h-screen bg-gray-100">
+        <div className="flex min-h-screen bg-gray-100  top-14">
             {/* Sidebar - only visible on large screens */}
             <DashboardSidebar userType="volunteer" />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col top-8">
+            <div className="flex-1 flex flex-col">
                 {/* Header
                 <div className="bg-white shadow-sm p-4 sm:p-6 lg:p-8">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

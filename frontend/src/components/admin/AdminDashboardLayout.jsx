@@ -56,12 +56,12 @@ const AdminDashboardLayout = () => {
     return (
         <>
         <Navbar/>
-        <div className="flex min-h-screen bg-gray-100">
+        <div className="flex min-h-screen bg-gray-100 top-14">
             {/* Sidebar - only visible on large screens */}
             <DashboardSidebar userType="admin" />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col top-8">
+            <div className="flex-1 flex flex-col">
                 {/* Header */}
                 {/* <div className="bg-white shadow-sm p-4 sm:p-6 lg:p-8">
                     <h1 className="text-3xl font-bold text-gray-800">
