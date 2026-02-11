@@ -127,8 +127,8 @@ const VolunteerDashboardLayout = () => {
                 {/* </div> */}
             </div>
 
-            <Footer/>
         </div>
+        <Footer/>
         </>
     );
 };
