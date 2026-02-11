@@ -109,7 +109,7 @@ const VolunteerVerify = () => {
 
     if (error) {
         return (
-            <div className="p-4 max-w-md mx-auto">
+            <div className="p-5 max-w-md mx-auto">
                 <Alert variant="destructive">
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
@@ -124,7 +124,7 @@ const VolunteerVerify = () => {
     }
 
     return (
-        <div className="container mx-auto p-4">
+        <div className="container mx-auto p-5">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Unverified Volunteers</h2>
 
             {unverifiedVolunteers.length === 0 ? (

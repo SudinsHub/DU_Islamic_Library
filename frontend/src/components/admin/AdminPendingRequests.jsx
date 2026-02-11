@@ -245,7 +245,7 @@ const PendingBookRequests = () => {
 
 
     return (
-        <div className="p-4 sm:p-6 bg-white rounded-lg shadow-sm">
+        <div className="p-5 sm:p-6 bg-white rounded-lg shadow-sm">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Book Requests</h2>
 
             {/* Filter and Sort Controls */}

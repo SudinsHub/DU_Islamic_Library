@@ -621,7 +621,7 @@ const VolBookManagementPage = () => {
   };
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 px-5">
       <h1 className="text-3xl font-bold mb-6">Manage Books</h1>
 
       {/* Filters */}

@@ -193,7 +193,7 @@ const AdminReadersPage = () => {
     }
 
     return (
-        <div className="container mx-auto p-4">
+        <div className="container mx-auto p-5">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Manage Readers</h2>
 
             {/* Filter Section */}

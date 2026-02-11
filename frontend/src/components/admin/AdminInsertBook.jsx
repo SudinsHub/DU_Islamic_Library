@@ -399,7 +399,7 @@ const InsertBookForm = () => {
     };
 
     return (
-        <div className="p-4 sm:p-6 bg-white rounded-lg shadow-sm">
+        <div className="p-5 sm:p-6 bg-white rounded-lg shadow-sm">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Insert/Update Book Copies</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">

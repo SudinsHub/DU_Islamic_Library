@@ -119,11 +119,11 @@ const VolunteerDashboardLayout = () => {
                 </div> */}
 
                 {/* Content Area */}
-                <div className="flex-1 p-4 sm:p-6 lg:p-8">
+                {/* <div className="flex-1 p-4 sm:p-6 lg:p-8"> */}
                     {/* <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8"> */}
                         {currentSection}
                     {/* </div> */}
-                </div>
+                {/* </div> */}
             </div>
         </div>
         </>
