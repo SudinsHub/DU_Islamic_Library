@@ -56,7 +56,7 @@ const AdminDashboardLayout = () => {
     return (
         <>
         <Navbar/>
-        <div className="flex min-h-screen bg-gray-100 top-14">
+        <div className="flex min-h-screen bg-gray-100 pt-20">
             {/* Sidebar - only visible on large screens */}
             <DashboardSidebar userType="admin" />
 
