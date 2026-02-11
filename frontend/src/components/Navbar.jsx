@@ -306,7 +306,7 @@ const Navbar = () => {
                             </div>
 
                             {/* Mobile Menu Button (visible on small screens) */}
-                            <div className="relative md:hidden">
+                            <div className={`relative ${userType === "reader" ? "md:hidden" : ""}`}>
                                 <button
                                     ref={menuButtonRef}
                                     className="p-2 text-gray-600 hover:text-gray-800"

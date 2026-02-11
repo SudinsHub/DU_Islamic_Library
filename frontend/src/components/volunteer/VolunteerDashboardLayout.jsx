@@ -10,6 +10,7 @@ import PendingRequests from '@/components/volunteer/PendingRequests';
 import CurrentLendings from '@/components/volunteer/CurrentLendings';
 import VolBookIndex from '@/components/volunteer/VolBookIndex';
 import Navbar from '@/components/Navbar';
+import Footer from '../Footer';
 
 const VolunteerDashboardLayout = () => {
     const { section } = useParams();
@@ -125,6 +126,8 @@ const VolunteerDashboardLayout = () => {
                     {/* </div> */}
                 {/* </div> */}
             </div>
+
+            <Footer/>
         </div>
         </>
     );
