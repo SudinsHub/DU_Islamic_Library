@@ -355,6 +355,13 @@ const Navbar = () => {
                                         {userType === 'volunteer' && (
                                             <>
                                                 <Link 
+                                                    to="/browse-books" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Browse Books
+                                                </Link>
+                                                <Link 
                                                     to="/user/volunteer/insert-book" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
@@ -386,6 +393,13 @@ const Navbar = () => {
                                         )}
                                         {userType === 'admin' && (
                                             <>
+                                                <Link
+                                                    to="/browse-books" 
+                                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
+                                                    onClick={() => setShowMobileMenu(false)}
+                                                >
+                                                    Browse Books
+                                                </Link>
                                                 <Link
                                                     to="/user/admin/verify-volunteers" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"

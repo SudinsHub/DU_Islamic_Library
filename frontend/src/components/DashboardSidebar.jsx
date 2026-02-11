@@ -12,6 +12,7 @@ const DashboardSidebar = ({ userType }) => {
     const getMenuItems = () => {
         if (userType === 'volunteer') {
             return [
+                { id: 'browse-books', label: 'Browse Books', path: '/browse-books' },
                 { id: 'insert-book', label: 'Insert Book', path: '/user/volunteer/insert-book' },
                 { id: 'pending-requests', label: 'Pending Requests', path: '/user/volunteer/pending-requests' },
                 { id: 'current-lendings', label: 'Current Lendings', path: '/user/volunteer/current-lendings' },
@@ -19,6 +20,7 @@ const DashboardSidebar = ({ userType }) => {
             ];
         } else if (userType === 'admin') {
             return [
+                { id: 'browse-books', label: 'Browse Books', path: '/browse-books' },
                 { id: 'verify-volunteers', label: 'Verify Volunteers', path: '/user/admin/verify-volunteers' },
                 { id: 'insert-books', label: 'Insert Books', path: '/user/admin/insert-books' },
                 { id: 'pending-requests', label: 'Pending Requests', path: '/user/admin/pending-requests' },

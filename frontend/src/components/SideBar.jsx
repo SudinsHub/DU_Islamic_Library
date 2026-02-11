@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Crown, BookOpen, Heart, Menu } from 'lucide-react';
+import { Home, Crown, BookOpen, Heart, Menu, EarthIcon } from 'lucide-react';
 import {Link} from 'react-router'
 
 import { useState } from "react";
@@ -7,7 +7,7 @@ import { useState } from "react";
 const Sidebar = ({initialCollapsed = false}) => {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const menuItems = [{ icon: Home, label: "Dashboard", href: "/dashboard" }, { icon: Crown, label: "Leaderboard", href: "/leaderboard" },
-     { icon: BookOpen, label: "My reads", href: "/my-reads" }, 
+    { icon: BookOpen, label: "My reads", href: "/my-reads" }, 
     { icon: Heart, label: "Wishlist", href: "/wishlist" 
 
   }]
