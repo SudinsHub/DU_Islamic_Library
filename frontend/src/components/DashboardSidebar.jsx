@@ -1,3 +1,4 @@
+//DashboardSidebar.jsx
 import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { buttonGreen } from '@/utils/colors';
@@ -40,7 +41,7 @@ const DashboardSidebar = ({ userType }) => {
     };
 
     return (
-        <aside className="hidden md:flex md:w-64 bg-gray-900 text-white flex-col h-screen sticky top-0">
+        <aside className="hidden md:flex md:w-64 bg-gray-900 text-white flex-col h-screen sticky top-2">
             {/* Sidebar Header */}
             <div className="p-6 border-b border-gray-700">
                 <h2 className="text-xl font-bold truncate">

@@ -61,20 +61,20 @@ const AdminDashboardLayout = () => {
             <DashboardSidebar userType="admin" />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col top-2">
                 {/* Header */}
-                <div className="bg-white shadow-sm p-4 sm:p-6 lg:p-8">
+                {/* <div className="bg-white shadow-sm p-4 sm:p-6 lg:p-8">
                     <h1 className="text-3xl font-bold text-gray-800">
                         Welcome, {adminName}!
                     </h1>
-                </div>
+                </div> */}
 
                 {/* Content Area */}
-                <div className="flex-1 p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8">
+                {/* <div className="flex-1 p-4 sm:p-6 lg:p-8">
+                    <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8"> */}
                         {currentSection}
-                    </div>
-                </div>
+                    {/* </div>
+                </div> */}
             </div>
         </div>
         </>

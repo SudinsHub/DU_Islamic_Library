@@ -85,14 +85,14 @@ const VolunteerDashboardLayout = () => {
             <DashboardSidebar userType="volunteer" />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
-                {/* Header */}
+            <div className="flex-1 flex flex-col top-2">
+                {/* Header
                 <div className="bg-white shadow-sm p-4 sm:p-6 lg:p-8">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <h1 className="text-3xl font-bold text-gray-800">
                             Welcome, {volunteerName}!
                         </h1>
-                        {/* <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4">
                             {loadingAvailability ? (
                                 <span className="text-gray-500">Loading...</span>
                             ) : (
@@ -114,15 +114,15 @@ const VolunteerDashboardLayout = () => {
                                 </div>
                             )}
                             {errorAvailability && <p className="text-red-500 text-sm">{errorAvailability}</p>}
-                        </div> */}
+                        </div>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Content Area */}
                 <div className="flex-1 p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8">
+                    {/* <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8"> */}
                         {currentSection}
-                    </div>
+                    {/* </div> */}
                 </div>
             </div>
         </div>

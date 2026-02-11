@@ -1,3 +1,4 @@
+// Navbar.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Edit, Search, User, LogOut, Menu } from 'lucide-react';
 import { buttonGreen } from '../utils/colors'; // Assuming this path is correct
@@ -5,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogFooter,
     AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog'
-// import { apiCall } from '@/utils/ApiCall';
+import { Link } from "react-router-dom";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -320,134 +321,134 @@ const Navbar = () => {
                                     >
                                         {userType === 'reader' && (
                                             <>
-                                                <a 
+                                                <Link 
                                                     href="/browse-books" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Browse books
-                                                </a>
+                                                </Link>
                                                 <hr className="my-1 border-gray-200" />
-                                                <a 
+                                                <Link 
                                                     href="/dashboard" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Dashboard
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/wishlist" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Wishlist
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/my-reads" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     My Reads
-                                                </a>
+                                                </Link>
                                             </>
                                         )}
                                         {userType === 'volunteer' && (
                                             <>
-                                                <a 
+                                                <Link 
                                                     href="/user/volunteer/insert-book" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Insert Book
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/volunteer/pending-requests" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Pending Requests
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/volunteer/current-lendings" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Current Lendings
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/volunteer/book-index" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Book Index
-                                                </a>
+                                                </Link>
                                             </>
                                         )}
                                         {userType === 'admin' && (
                                             <>
-                                                <a 
+                                                <Link
                                                     href="/user/admin/verify-volunteers" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Verify Volunteers
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/admin/insert-books" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Insert Books
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/admin/pending-requests" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Pending Requests
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/admin/pending-borrows" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Pending Borrows
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/admin/readers" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Readers
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/admin/volunteers" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Volunteers
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/admin/book-index" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Book Index
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/admin/entity-management" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Entity Management
-                                                </a>
-                                                <a 
+                                                </Link>
+                                                <Link 
                                                     href="/user/admin/admin-management" 
                                                     className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-sm"
                                                     onClick={() => setShowMobileMenu(false)}
                                                 >
                                                     Admin Management
-                                                </a>
+                                                </Link>
                                             </>
                                         )}
                                     </div>
