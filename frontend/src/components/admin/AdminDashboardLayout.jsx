@@ -61,7 +61,7 @@ const AdminDashboardLayout = () => {
             <DashboardSidebar userType="admin" />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col top-4">
+            <div className="flex-1 flex flex-col top-8">
                 {/* Header */}
                 {/* <div className="bg-white shadow-sm p-4 sm:p-6 lg:p-8">
                     <h1 className="text-3xl font-bold text-gray-800">

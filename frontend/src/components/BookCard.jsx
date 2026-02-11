@@ -22,7 +22,7 @@ const LibraryBookCard = ({
     navigate(`/book-details?id=${id}`);
   };
   return (
-    <div onClick={handleClick} className="max-w-sm rounded-xl bg-white p-4 shadow-lg  cursor-pointer">
+    <div onClick={handleClick} className="max-w-sm rounded-xl bg-white p-3 shadow-lg  cursor-pointer">
       <div className="flex justify-between items-start mb-2">
         <button className="text-2xl">
           {isLoved ? (

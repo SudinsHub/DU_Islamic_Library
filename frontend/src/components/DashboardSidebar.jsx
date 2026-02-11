@@ -41,12 +41,9 @@ const DashboardSidebar = ({ userType }) => {
     };
 
     return (
-        <aside className="hidden md:flex md:w-64 bg-gray-900 text-white flex-col h-screen sticky top-2">
+        <aside className="hidden md:flex md:w-64 bg-gray-900 text-white flex-col h-screen sticky top-8">
             {/* Sidebar Header */}
             <div className="p-6 border-b border-gray-700">
-                <h2 className="text-xl font-bold truncate">
-                    {userType === 'volunteer' ? 'Volunteer' : 'Admin'} Dashboard
-                </h2>
                 <p className="text-sm text-gray-400 mt-1">
                     {userType === 'volunteer' ? 'Volunteer Panel' : 'Administration Panel'}
                 </p>

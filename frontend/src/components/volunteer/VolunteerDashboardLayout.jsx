@@ -85,7 +85,7 @@ const VolunteerDashboardLayout = () => {
             <DashboardSidebar userType="volunteer" />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col top-2">
+            <div className="flex-1 flex flex-col top-8">
                 {/* Header
                 <div className="bg-white shadow-sm p-4 sm:p-6 lg:p-8">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
