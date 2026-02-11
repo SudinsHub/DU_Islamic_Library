@@ -43,7 +43,7 @@ const DashboardSidebar = ({ userType }) => {
     };
 
     return (
-        <aside className="hidden md:flex md:w-64 bg-gray-900 text-white flex-col h-screen sticky">
+        <aside className="hidden md:flex md:w-64 bg-gray-900 text-white flex-col min-h-full">
             {/* Sidebar Header */}
             <div className="p-6 border-b border-gray-700">
                 <p className="text-sm text-gray-400 mt-1">
