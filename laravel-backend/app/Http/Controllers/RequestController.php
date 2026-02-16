@@ -31,7 +31,7 @@ class RequestController extends Controller
     public function index(Request $request): JsonResponse
     {
         // Start with a base query
-        $query = LibraryRequest::with(['reader', 'book', 'hall']);
+        $query = LibraryRequest::with(['reader', 'book', 'hall', 'reader.hall']);
 
         // 1. Hall Filtering
         $hallId = null;
@@ -46,7 +46,6 @@ class RequestController extends Controller
 
         if ($hallId) {
             $query->where('hall_id', $hallId);
-            $query->with('hall');
         }
 
         // Also hall name should be sent with response for better UX in frontend, so we can eager load hall and include its name in the response.

@@ -192,7 +192,7 @@ const PendingBookRequests = () => {
                                 <p><span className="font-medium">Phone:</span> {request.reader?.contact || 'N/A'}</p>
                                 <p><span className="font-medium">Session:</span> {request.reader?.session || 'N/A'}</p>
                                 <p><span className="font-medium">Gender:</span> {request.reader?.gender || 'N/A'}</p>
-                                <p><span className="font-medium">Hall:</span> {request.reader?.hall || 'N/A'}</p>
+                                <p><span className="font-medium">Hall:</span> {request.reader?.hall?.name || 'N/A'}</p>
                             </div>
                         )}
 
