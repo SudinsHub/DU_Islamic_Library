@@ -46,7 +46,11 @@ class RequestController extends Controller
 
         if ($hallId) {
             $query->where('hall_id', $hallId);
+            $query->with('hall');
         }
+
+        // Also hall name should be sent with response for better UX in frontend, so we can eager load hall and include its name in the response.
+
 
         // 2. Status Filtering
         $status = $request->input('status');
