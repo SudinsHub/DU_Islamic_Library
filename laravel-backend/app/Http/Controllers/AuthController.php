@@ -258,7 +258,7 @@ class AuthController extends Controller
 
         } catch (ValidationException $e) {
             return response()->json([
-                'message' => 'Validation Error',
+                'message' => $e->errors()[array_key_first($e->errors())][0],
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
@@ -398,7 +398,7 @@ class AuthController extends Controller
                 'request' => $request->all(),
             ]);
             return response()->json([
-                'message' => 'Validation Error',
+                'message' => $e->errors()[array_key_first($e->errors())][0],
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
@@ -445,7 +445,7 @@ class AuthController extends Controller
 
         } catch (ValidationException $e) {
             return response()->json([
-                'message' => 'Validation Error',
+                'message' => $e->errors()[array_key_first($e->errors())][0],
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
@@ -492,7 +492,7 @@ class AuthController extends Controller
 
         } catch (ValidationException $e) {
             return response()->json([
-                'message' => 'Validation Error',
+                'message' => $e->errors()[array_key_first($e->errors())][0],
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
@@ -539,7 +539,7 @@ class AuthController extends Controller
 
         } catch (ValidationException $e) {
             return response()->json([
-                'message' => 'Validation Error',
+                'message' => $e->errors()[array_key_first($e->errors())][0],
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
