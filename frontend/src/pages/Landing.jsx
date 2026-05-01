@@ -84,6 +84,8 @@ export default function Home() {
                 </div>
               ))}
             </div>
+            {/* Put youtube guide section here*/}
+
 
             <div className="bg-white rounded-2xl p-10 border border-[#0CCE6B]/30 text-center">
               <div className="bg-[#0CCE6B]/15 rounded-lg py-5">
@@ -124,7 +126,40 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 🎥 YOUTUBE GUIDE SECTION */}
+      <section className="w-full py-20 px-6 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="font-bangla text-4xl sm:text-5xl text-gray-900 mb-4">
+              বই নেয়ার প্রক্রিয়া
+            </h2>
+            <p className="font-bangla text-gray-600 text-xl sm:text-2xl">
+              ভিডিওতে দেখুন কিভাবে সহজেই বই সংগ্রহ করবেন
+            </p>
+          </div>
 
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-[#0CCE6B]/30 hover:border-[#0CCE6B] transition-all duration-300 bg-white p-2 sm:p-4">
+            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                className="absolute top-0 left-0 w-full h-full rounded-2xl"
+                src="https://www.youtube.com/embed/UZ5lcTXOHGo"
+                title="বই নেয়ার প্রক্রিয়া"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center">
+            <div className="inline-flex items-center gap-2 bg-[#0CCE6B]/10 rounded-full px-6 py-3 border border-[#0CCE6B]/30">
+              <CheckCircle2 className="w-5 h-5 text-[#0CCE6B]" />
+              <p className="font-bangla text-gray-700 text-lg">
+                ভিডিও দেখে সহজেই বুঝে নিন পুরো প্রক্রিয়া
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* 📚 STEPS SECTION */}
       <section className="w-full py-20 px-6 bg-white">
