@@ -148,10 +148,10 @@ const BrowseBooksPage = () => {
     const pageFromUrl = parseInt(params.get("page")) || 1;
     setCurrentPage(pageFromUrl);
     
-    // Extract and set filters
-    const categoriesFromUrl = params.get("categories") ? params.get("categories").split(',').map(Number) : [];
-    const authorsFromUrl = params.get("authors") ? params.get("authors").split(',').map(Number) : [];
-    const hallsFromUrl = params.get("halls") ? params.get("halls").split(',').map(Number) : [];
+    // Extract and set filters (keep as strings since they're UUIDs)
+    const categoriesFromUrl = params.get("categories") ? params.get("categories").split(',') : [];
+    const authorsFromUrl = params.get("authors") ? params.get("authors").split(',') : [];
+    const hallsFromUrl = params.get("halls") ? params.get("halls").split(',') : [];
     
     setSelectedCategories(categoriesFromUrl);
     setSelectedAuthors(authorsFromUrl);
@@ -254,9 +254,9 @@ const BrowseBooksPage = () => {
 
   // --- Handlers ---
   const handleSortChange = (option) => {
-    setSortOption(option);
     setShowSortOptions(false);
     // Update URL with new sort and reset to page 1
+    // The URL sync useEffect will update the state
     updateUrl({ sort: option, page: 1 });
   };
 
@@ -270,25 +270,23 @@ const BrowseBooksPage = () => {
         newCategories = selectedCategories.includes(filterId)
           ? selectedCategories.filter((id) => id !== filterId)
           : [...selectedCategories, filterId];
-        setSelectedCategories(newCategories);
         break;
       case 'author':
         newAuthors = selectedAuthors.includes(filterId)
           ? selectedAuthors.filter((id) => id !== filterId)
           : [...selectedAuthors, filterId];
-        setSelectedAuthors(newAuthors);
         break;
       case 'hall':
         newHalls = selectedHalls.includes(filterId)
           ? selectedHalls.filter((id) => id !== filterId)
           : [...selectedHalls, filterId];
-        setSelectedHalls(newHalls);
         break;
       default:
         break;
     }
 
     // Update URL with new filters and reset to page 1
+    // The URL sync useEffect will update the state
     updateUrl({ 
       categories: newCategories, 
       authors: newAuthors, 
@@ -299,10 +297,8 @@ const BrowseBooksPage = () => {
 
 
   const handleClearAllFilters = () => {
-    setSelectedCategories([]);
-    setSelectedAuthors([]);
-    setSelectedHalls([]);
     // Update URL with cleared filters and reset to page 1
+    // The URL sync useEffect will update the state
     updateUrl({ categories: [], authors: [], halls: [], page: 1 });
   };
 
