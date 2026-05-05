@@ -18,27 +18,12 @@ const BrowseBooksPage = () => {
   const { token } = useAuth(); 
   const { search } = useLocation();
   const navigate = useNavigate();
-  
-  // Extract query parameters
-  const params = new URLSearchParams(search);
-  const searchKey = params.get("search") || ''; 
-  const pageFromUrl = parseInt(params.get("page")) || 1;
-  
-  // Extract filter and sort params from URL
-  const categoriesFromUrl = params.get("categories") ? params.get("categories").split(',').map(Number) : [];
-  const authorsFromUrl = params.get("authors") ? params.get("authors").split(',').map(Number) : [];
-  const hallsFromUrl = params.get("halls") ? params.get("halls").split(',').map(Number) : [];
-  const sortByFromUrl = params.get("sort_by") || 'recently_added';
-  const sortOrderFromUrl = params.get("sort_order") || 'desc';
-  
-  console.log("Search Key: ", searchKey);
-  console.log("Page from URL: ", pageFromUrl);
 
   // --- State Management ---
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(pageFromUrl);
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
 
@@ -47,10 +32,10 @@ const BrowseBooksPage = () => {
   const [authors, setAuthors] = useState([]);
   const [halls, setHalls] = useState([]);
 
-  // Filter Selections (to send to backend) - Initialize from URL
-  const [selectedCategories, setSelectedCategories] = useState(categoriesFromUrl);
-  const [selectedAuthors, setSelectedAuthors] = useState(authorsFromUrl);
-  const [selectedHalls, setSelectedHalls] = useState(hallsFromUrl);
+  // Filter Selections (to send to backend)
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedAuthors, setSelectedAuthors] = useState([]);
+  const [selectedHalls, setSelectedHalls] = useState([]);
 
   // Filter Search Terms (for searching within filter dropdowns)
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
@@ -65,12 +50,8 @@ const BrowseBooksPage = () => {
     { value: 'top_rated', label: 'Highest Rated', order: 'desc' },
   ];
 
-  // Sort Option - Initialize from URL
-  const getSortOptionFromUrl = () => {
-    const option = sortOptions.find(opt => opt.value === sortByFromUrl && opt.order === sortOrderFromUrl);
-    return option || { value: 'recently_added', label: 'Newest First', order: 'desc' };
-  };
-  const [sortOption, setSortOption] = useState(getSortOptionFromUrl());
+  // Sort Option
+  const [sortOption, setSortOption] = useState({ value: 'recently_added', label: 'Newest First', order: 'desc' });
 
   // UI State for dropdowns
   const [showSortOptions, setShowSortOptions] = useState(false);
@@ -82,10 +63,11 @@ const BrowseBooksPage = () => {
 
   // --- Helper to update URL with all params ---
   const updateUrl = (updates = {}) => {
+    const currentParams = new URLSearchParams(search);
     const newParams = new URLSearchParams();
     
-    // Add search if exists
-    const searchValue = updates.search !== undefined ? updates.search : searchKey;
+    // Add search if exists (preserve from current URL unless explicitly updated)
+    const searchValue = updates.search !== undefined ? updates.search : currentParams.get("search");
     if (searchValue) {
       newParams.set('search', searchValue);
     }
@@ -158,23 +140,31 @@ const BrowseBooksPage = () => {
     };
   }, []);
 
-  // --- Sync currentPage with URL ---
+  // --- Initialize state from URL on mount and when URL changes ---
   useEffect(() => {
+    const params = new URLSearchParams(search);
+    
+    // Extract and set page
+    const pageFromUrl = parseInt(params.get("page")) || 1;
     setCurrentPage(pageFromUrl);
-  }, [pageFromUrl]);
-
-  // --- Sync filters and sort with URL ---
-  useEffect(() => {
+    
+    // Extract and set filters
+    const categoriesFromUrl = params.get("categories") ? params.get("categories").split(',').map(Number) : [];
+    const authorsFromUrl = params.get("authors") ? params.get("authors").split(',').map(Number) : [];
+    const hallsFromUrl = params.get("halls") ? params.get("halls").split(',').map(Number) : [];
+    
     setSelectedCategories(categoriesFromUrl);
     setSelectedAuthors(authorsFromUrl);
     setSelectedHalls(hallsFromUrl);
     
-    // Update sort option from URL
+    // Extract and set sort
+    const sortByFromUrl = params.get("sort_by") || 'recently_added';
+    const sortOrderFromUrl = params.get("sort_order") || 'desc';
     const urlSortOption = sortOptions.find(opt => opt.value === sortByFromUrl && opt.order === sortOrderFromUrl);
     if (urlSortOption) {
       setSortOption(urlSortOption);
     }
-  }, [search, sortByFromUrl, sortOrderFromUrl, categoriesFromUrl, authorsFromUrl, hallsFromUrl]); // Re-run when URL search params change
+  }, [search]); // Re-run when URL changes
 
   // --- Fetch Initial Filter Data (Categories, Authors, Halls) ---
   useEffect(() => {
@@ -206,6 +196,10 @@ const BrowseBooksPage = () => {
   const fetchBooks = useCallback(async (page = 1) => {
     setLoading(true);
     setError(null);
+
+    // Extract search from URL
+    const params = new URLSearchParams(search);
+    const searchKey = params.get("search") || '';
 
     const requestParams = {
       page: page,
@@ -251,7 +245,7 @@ const BrowseBooksPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, token, sortOption, selectedCategories, selectedAuthors, selectedHalls, searchKey]);
+  }, [apiUrl, token, sortOption, selectedCategories, selectedAuthors, selectedHalls, search]);
 
   // --- useEffect for triggering book fetch on filter/sort changes ---
   useEffect(() => {
