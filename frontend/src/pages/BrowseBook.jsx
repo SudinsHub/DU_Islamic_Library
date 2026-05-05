@@ -23,11 +23,6 @@ const BrowseBooksPage = () => {
   const params = new URLSearchParams(search);
   const searchKey = params.get("search") || ''; 
   const pageFromUrl = parseInt(params.get("page")) || 1;
-  const sortByFromUrl = params.get("sort_by") || 'recently_added';
-  const sortOrderFromUrl = params.get("sort_order") || 'desc';
-  const categoriesFromUrl = params.get("categories") ? params.get("categories").split(',').map(Number) : [];
-  const authorsFromUrl = params.get("authors") ? params.get("authors").split(',').map(Number) : [];
-  const hallsFromUrl = params.get("halls") ? params.get("halls").split(',').map(Number) : [];
   
   console.log("Search Key: ", searchKey);
   console.log("Page from URL: ", pageFromUrl);
@@ -45,21 +40,18 @@ const BrowseBooksPage = () => {
   const [authors, setAuthors] = useState([]);
   const [halls, setHalls] = useState([]);
 
-  // Filter Selections (to send to backend) - Initialize from URL
-  const [selectedCategories, setSelectedCategories] = useState(categoriesFromUrl);
-  const [selectedAuthors, setSelectedAuthors] = useState(authorsFromUrl);
-  const [selectedHalls, setSelectedHalls] = useState(hallsFromUrl);
+  // Filter Selections (to send to backend)
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedAuthors, setSelectedAuthors] = useState([]);
+  const [selectedHalls, setSelectedHalls] = useState([]);
 
   // Filter Search Terms (for searching within filter dropdowns)
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
   const [authorSearchTerm, setAuthorSearchTerm] = useState('');
   const [hallSearchTerm, setHallSearchTerm] = useState('');
 
-  // Sort Option - Initialize from URL
-  const initialSortOption = sortOptions.find(
-    opt => opt.value === sortByFromUrl && opt.order === sortOrderFromUrl
-  ) || { value: 'recently_added', label: 'Newest First', order: 'desc' };
-  const [sortOption, setSortOption] = useState(initialSortOption);
+  // Sort Option
+  const [sortOption, setSortOption] = useState({ value: 'recently_added', label: 'Recently Added', order: 'desc' });
 
   // UI State for dropdowns
   const [showSortOptions, setShowSortOptions] = useState(false);
@@ -77,56 +69,14 @@ const BrowseBooksPage = () => {
     { value: 'top_rated', label: 'Highest Rated', order: 'desc' },
   ];
 
-  // --- Helper to update URL with all params ---
-  const updateUrl = (updates = {}) => {
+  // --- Helper to update URL with new page ---
+  const updateUrlWithPage = (page) => {
     const newParams = new URLSearchParams(search);
-    
-    // Handle page
-    const page = updates.page !== undefined ? updates.page : currentPage;
     if (page === 1) {
       newParams.delete('page');
     } else {
       newParams.set('page', page.toString());
     }
-    
-    // Handle search
-    if (searchKey) {
-      newParams.set('search', searchKey);
-    }
-    
-    // Handle sort
-    const sort = updates.sortOption !== undefined ? updates.sortOption : sortOption;
-    if (sort.value !== 'recently_added' || sort.order !== 'desc') {
-      newParams.set('sort_by', sort.value);
-      newParams.set('sort_order', sort.order);
-    } else {
-      newParams.delete('sort_by');
-      newParams.delete('sort_order');
-    }
-    
-    // Handle filters
-    const categories = updates.categories !== undefined ? updates.categories : selectedCategories;
-    const authors = updates.authors !== undefined ? updates.authors : selectedAuthors;
-    const halls = updates.halls !== undefined ? updates.halls : selectedHalls;
-    
-    if (categories.length > 0) {
-      newParams.set('categories', categories.join(','));
-    } else {
-      newParams.delete('categories');
-    }
-    
-    if (authors.length > 0) {
-      newParams.set('authors', authors.join(','));
-    } else {
-      newParams.delete('authors');
-    }
-    
-    if (halls.length > 0) {
-      newParams.set('halls', halls.join(','));
-    } else {
-      newParams.delete('halls');
-    }
-    
     const newSearch = newParams.toString();
     const newUrl = newSearch ? `?${newSearch}` : window.location.pathname;
     navigate(newUrl, { replace: true });
@@ -251,46 +201,38 @@ const BrowseBooksPage = () => {
     setSortOption(option);
     setShowSortOptions(false);
     // Reset to page 1 when sorting changes
-    setCurrentPage(1);
-    updateUrl({ sortOption: option, page: 1 });
+    updateUrlWithPage(1);
   };
 
   const handleFilterToggle = (filterType, filterId) => {
-    let newCategories = selectedCategories;
-    let newAuthors = selectedAuthors;
-    let newHalls = selectedHalls;
-    
     switch (filterType) {
       case 'category':
-        newCategories = selectedCategories.includes(filterId)
-          ? selectedCategories.filter((id) => id !== filterId)
-          : [...selectedCategories, filterId];
-        setSelectedCategories(newCategories);
+        setSelectedCategories((prev) =>
+          prev.includes(filterId)
+            ? prev.filter((id) => id !== filterId)
+            : [...prev, filterId]
+        );
         break;
       case 'author':
-        newAuthors = selectedAuthors.includes(filterId)
-          ? selectedAuthors.filter((id) => id !== filterId)
-          : [...selectedAuthors, filterId];
-        setSelectedAuthors(newAuthors);
+        setSelectedAuthors((prev) =>
+          prev.includes(filterId)
+            ? prev.filter((id) => id !== filterId)
+            : [...prev, filterId]
+        );
         break;
       case 'hall':
-        newHalls = selectedHalls.includes(filterId)
-          ? selectedHalls.filter((id) => id !== filterId)
-          : [...selectedHalls, filterId];
-        setSelectedHalls(newHalls);
+        setSelectedHalls((prev) =>
+          prev.includes(filterId)
+            ? prev.filter((id) => id !== filterId)
+            : [...prev, filterId]
+        );
         break;
       default:
         break;
     }
 
     // Reset to page 1 when filters change
-    setCurrentPage(1);
-    updateUrl({ 
-      categories: newCategories, 
-      authors: newAuthors, 
-      halls: newHalls, 
-      page: 1 
-    });
+    updateUrlWithPage(1);
   };
 
 
@@ -299,13 +241,11 @@ const BrowseBooksPage = () => {
     setSelectedAuthors([]);
     setSelectedHalls([]);
     // Reset to page 1 when clearing filters
-    setCurrentPage(1);
-    updateUrl({ categories: [], authors: [], halls: [], page: 1 });
+    updateUrlWithPage(1);
   };
 
   const handlePageChange = (page) => {
-    setCurrentPage(page);
-    updateUrl({ page });
+    updateUrlWithPage(page);
   };
 
   // --- Filtered lists for display within dropdowns ---
