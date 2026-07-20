@@ -98,10 +98,12 @@ class ReaderController extends Controller
         ]);
 
         $reader->update($validatedData);
+        $reader->refresh();
+        $reader->load(['hall', 'department']);
 
         return response()->json([
             'message' => 'Reader updated successfully!',
-            'reader' => $reader->load(['hall', 'department'])
+            'reader' => $reader
         ]);
     }
 

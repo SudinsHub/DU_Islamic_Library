@@ -116,10 +116,12 @@ class VolunteerController extends Controller
 
 
         $volunteer->update($validatedData);
+        $volunteer->refresh();
+        $volunteer->load(['hall', 'department']);
 
         return response()->json([
             'message' => 'Volunteer updated successfully!',
-            'volunteer' => $volunteer->load(['hall', 'department'])
+            'volunteer' => $volunteer
         ]);
     }
 
