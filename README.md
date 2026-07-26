@@ -1,4 +1,4 @@
-# 📚 DU Islamic Library (ঢাকা বিশ্ববিদ্যালয় ইসলামিক লাইব্রেরি)
+# DU Islamic Library (ঢাকা বিশ্ববিদ্যালয় ইসলামিক লাইব্রেরি)
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
 [![React](https://img.shields.io/badge/React-19.x-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
@@ -11,7 +11,7 @@
 
 ---
 
-## 🌟 Quick Overview for Recruiters
+## System Overview
 
 **DU Islamic Library** is built to digitize and streamline the distribution of Islamic literature across residence halls and departments at the University of Dhaka. It bridges the gap between campus volunteers maintaining hall collections and student readers searching for authentic books.
 
@@ -25,29 +25,29 @@
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 👨‍🎓 Reader Portal (Students)
+### Reader Portal (Students)
 * **Catalog & Advanced Filtering**: Browse and search books by Title, Author, Category, Publisher, Hall availability, and Department.
 * **Book Request Engine**: Request books directly from available campus hall inventories.
 * **Personalized Dashboard**: Track borrowed books, pending requests, reading history, and total points earned.
 * **Wishlist & Reviews**: Save books for later and publish reviews/ratings to earn community reward points.
 * **Account & Security**: Secure authentication, profile management, and SMTP-driven password reset.
 
-### 🤝 Volunteer Portal (Hall Managers)
+### Volunteer Portal (Hall Managers)
 * **Collection Management**: Manage hall-specific book physical copies and quantities (`BookCollection`).
 * **Request Processing**: Review, approve, and fulfill book requests submitted by hall readers.
 * **Lending & Return Tracker**: Handle book checkouts, process returns, update stock statuses, and mark unreturned items as lost.
 * **Availability Toggle**: Mark volunteer availability for physical book exchanges.
 
-### 🛡️ Admin Dashboard (Supervisors)
+### Admin Dashboard (Supervisors)
 * **Volunteer Verification System**: Review and verify incoming volunteer registration applications.
 * **Global Catalog Control**: Full CRUD operations for Books, Authors, Publishers, Categories, Halls, and Departments.
 * **Reader & Inventory Monitoring**: Oversee reader accounts, book distributions, and overall system metrics.
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Frontend
 | Technology | Role |
@@ -72,7 +72,7 @@
 
 ---
 
-## 🏗 System Architecture & Workflow
+## System Architecture & Workflow
 
 ```mermaid
 flowchart TD
@@ -108,7 +108,7 @@ flowchart TD
 
 ---
 
-## 📊 Core Database Models
+## Core Database Models
 
 | Model | Purpose |
 | :--- | :--- |
@@ -124,7 +124,7 @@ flowchart TD
 
 ---
 
-## ⚡ Getting Started & Local Setup
+## Getting Started & Local Setup
 
 ### Prerequisites
 - **PHP** `>= 8.2`
@@ -134,7 +134,7 @@ flowchart TD
 
 ---
 
-### 1️⃣ Backend Setup (`laravel-backend`)
+### Backend Setup (`laravel-backend`)
 
 ```bash
 # Navigate to the backend directory
@@ -165,7 +165,7 @@ php artisan serve
 
 ---
 
-### 2️⃣ Frontend Setup (`frontend`)
+### Frontend Setup (`frontend`)
 
 ```bash
 # Navigate to the frontend directory
@@ -184,7 +184,7 @@ npm run dev
 
 ---
 
-## 📡 Key API Endpoints Overview
+## Key API Endpoints Overview
 
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
@@ -200,7 +200,7 @@ npm run dev
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 DU_Islamic_Library/
@@ -231,12 +231,12 @@ DU_Islamic_Library/
 
 ---
 
-## 📜 License
+## License
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ---
 
 <p align="center">
-  Crafted with ❤️ for the Dhaka University Student Community.
+  Developed for the Dhaka University Student Community.
 </p>
